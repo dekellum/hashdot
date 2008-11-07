@@ -1,0 +1,7 @@
+# HashDot launch profile for Scala (http://www.scala-lang.org/)
+#. hashdot.profile = scala
+
+scala.home      = /opt/dist/scala-2.7.1
+java.class.path = ${scala.home}/lib/*.jar
+env.classpath   = ${java.class.path}
+hashdot.main    = scala.tools.nsc.MainGenericRunner

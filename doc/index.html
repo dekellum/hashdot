@@ -1,0 +1,222 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+  <title>Hashdot</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+<h1>Hashdot: Java-platform Script Launcher: 1.1</h1>
+<!--FIXME: Embed version -->
+<div class="nav">
+Main |
+<a href="reference.html">Reference</a> |
+<a href="COPYING">License</a> |
+<a href="http://sourceforge.net/project/showfiles.php?group_id=240265">Download</a>
+</div>
+
+<h2>Summary</h2>
+
+<p>Hashdot elevates Java-platform script interpreters to first class
+status on Unix-like operating systems.  It provides a script aware
+replacement to the stock 'java' launcher, and thus avoids numerous
+issues in using the 'java' launcher to bootstrap a script interpreter.
+All relevant interpreter and JVM options (i.e: Java heap size) may be
+specified directly in a script header and/or via system profiles,
+without resorting to environment variables, command line arguments,
+and the additional wrapper shell scripts needed to maintain them.</p>
+
+<p>Hashdot can support any Java-platform language. Script
+embedded settings support requires language compatibility with Unix
+hashbang '#!' conventions. Sample profiles are provided for 
+<a href="http://www.jython.org/">Jython</a>, 
+<a href="http://jruby.codehaus.org/">JRuby</a>, 
+<a href="http://www.scala-lang.org/">Scala</a>,    
+<a href="http://groovy.codehaus.org/">Groovy</a>, and
+<a href="http://www.mozilla.org/rhino/">Rhino&nbsp;Javascript</a>.
+Examples below are given using JRuby.</p>
+
+<p>Hashdot is released under 
+<a href="http://www.gnu.org/licenses/gpl.html">GPL v3</a> with a linking
+exception.  See <a href="COPYING">License</a>.</p>
+
+<ul>
+<li><a href="#features">Features</a>
+<ul>
+<li><a href="#hashbang">Hashbang</a></li>
+<li><a href="#properties">Properties</a></li>
+<li><a href="#profiles">Profiles</a></li>
+<li><a href="#profile_links">Profile Links</a></li>
+<li><a href="#on_the_path">On the PATH</a></li>
+<li><a href="#process">Script as UNIX Process</a></li>
+<li><a href="#daemonize">Daemonize</a></li>
+</ul></li>
+<li><a href="#platforms">Platforms</a></li>
+</ul>
+
+<h2><a name="features">Features</a></h2>
+
+<h3><a name="hashbang">Hashbang</a></h3>
+
+<p>Hashdot supports direct Unix hashbang interpreter declarations
+without the need to use 'env', embedded shell scripts, or other
+novelties required with the 'java' launcher:</p>
+
+<pre>#!/usr/bin/hashdot
+
+<i>...the script...</i>
+</pre>
+
+<h3><a name="properties">Properties</a></h3>
+
+<p><i>Hashdot properties</i> may be set in a script header or in <a
+href="#profiles">profiles</a>.  Properties are used to control Hashdot
+and JVM startup.  Hashdot properties are also mapped to Java system
+properties, and thus may influence the JDK, script interpreter, or
+other script components. Example script header:</p>
+
+<pre>#!/usr/bin/hashdot
+# Example Header
+#
+# Add Java VM options:
+#.hashdot.vm.options += -Xmx500m -Xss1024k
+#
+# Add jars to the system classpath from my.app.home:
+#.my.app.home = /opt/myapp
+#.java.class.path += ${my.app.home}/lib/*.jar
+#
+# Set default encoding Java system property:
+#.file.encoding = UTF-8
+
+<i>...the script...</i>
+</pre>
+
+<h3><a name="profiles">Profiles</a></h3>
+
+<p>A profile is a set of properties in a *.hdp file under the system
+profile directory (default: /etc/hashdot/profiles).  A profile is
+referenced via the special "hashdot.profile" directive. The following
+example is a complete JRuby script:</p>
+
+<pre>#!/usr/bin/hashdot
+#.hashdot.profile = jruby
+#.hashdot.vm.options += -Xmx256m
+
+puts "hello world!"
+</pre>
+
+<p>Where the script overrides of the jruby.hdp default heap size of 500m.</p>
+
+<h3><a name="profile_links">Profile Links</a></h3>
+
+<p>If hashdot is started using an executable name other than
+'hashdot', it attempts to load an initial profile of the same name. So
+if the 'jruby.hdp' profile is installed, and 'jruby' symlinked to
+'hashdot' under /usr/bin, as in:</p>
+
+<pre>
+hashdot*
+jruby -> hashdot*
+</pre>
+
+<p>Then the above script example can be further reduced to:</p>
+
+<pre>#!/usr/bin/jruby
+#.hashdot.vm.options += -Xmx256m
+
+puts "hello world!"
+</pre>
+
+<h3><a name="on_the_path">On the PATH</a></h3>
+
+<p>Provided that the above "/usr/bin/jruby" symlink is the first
+"jruby" in PATH, the following will also be launched by hashdot:</p>
+
+<pre>#!/usr/bin/env jruby
+
+puts "hello world!"
+</pre>
+
+<p>Hashdot launching can thus be made completely transparent and
+compatible with the hashbang directives in existing scripts, without
+modification. Similarly, various command line invocations of "jruby" can
+be successfully launched with hashdot:</p>
+
+<pre>% jruby -d hello.rb
+hello world!
+</pre>
+
+<pre>% cat hello.rb | jruby
+hello world!
+</pre>
+
+<pre>% jruby -e 'puts "hello world!"'
+hello world!
+</pre>
+
+<h3><a name="process">Script as UNIX Process</a></h3>
+
+<p>Hashdot invoked script processes are reported by UNIX utilities
+such as "ps", "pgrep", or "top" using the script name and script
+arguments instead of as "java" or the full java arguments gore.  Thus
+Java script interpreters under hashdot are reported the same as with native
+interpreters like bash. Example script "myservice":</p>
+
+<pre>[ "ps -p #{Process.pid}", "ps -f -p #{Process.pid}" ].each do |command|
+  puts command
+  IO.popen( command, "r" ) do |f|
+    puts f.readlines
+  end
+  puts
+end
+</pre>
+
+<p>When run using the "jruby" symlink to hashdot:</p>
+
+<pre>% /usr/bin/jruby ./myservice
+ps -p 16774
+  PID TTY          TIME CMD
+16774 pts/2    00:00:01 myservice
+
+ps -f -p 16774
+UID        PID  PPID  C STIME TTY          TIME CMD
+david    16774 27647 99 14:25 pts/2    00:00:01 /usr/bin/jruby ./myservice
+</pre>
+
+<p>When run using the current JRuby provided wrapper script and 'java'
+launcher (line breaks added):</p>
+
+<pre>% /opt/dist/jruby-1.1.4/bin/jruby ./myservice
+ps -p 16792
+  PID TTY          TIME CMD
+16792 pts/2    00:00:00 java
+
+ps -f -p 16792 
+UID        PID  PPID  C STIME TTY          TIME CMD
+david    16792 27647 89 14:26 pts/2    00:00:00 /opt/java/jdk_sun_1.6.0_05_x32/bin/java\
+-client -Djruby.memory.max=500m -Djruby.stack.max=1024k -Xmx500m -Xss1024k \
+-Xbootclasspath/a:/opt/dist/jruby-1.1.4/lib/jruby.jar -classpath \
+/opt/dist/jruby-1.1.4/lib/bsf.jar:/opt/dist/jruby-1.1.4/lib/jruby.jar:\
+/opt/dist/jruby-1.1.4/lib/profile.jar -Djruby.home=/opt/dist/jruby-1.1.4 \
+-Djruby.lib=/opt/dist/jruby-1.1.4/lib -Djruby.script=jruby \
+-Djruby.shell=/bin/sh org.jruby.Main ./myservice
+</pre>
+
+<h3><a name="daemonize">Daemonize</a></h3>
+
+<p>Hashdot supports a "hashdot.daemonize" and "hashdot.io_redirect"
+properties, conveniently packaged in a provided "daemon" profile, to
+invoke a script as a detached UNIX daemon process. This includes full
+support for directing process STDERR and STDOUT (including JVM) to a
+specified file.</p>
+
+<h2><a name="platforms">Platforms</a></h2>
+
+<p>Hashdot has been tested under Linux (x86_32 and x86_64). Mac OS X
+and Cygwin should be viable additions.</p>
+
+<div class="copyright">
+  Copyright 2008, David Kellum.  All rights reserved.
+</div>
+</body>
+</html>

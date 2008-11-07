@@ -1,0 +1,6 @@
+# HashDot launch profile for Jython (http://www.jython.org/Project/)
+#. hashdot.profile = jython
+
+python.home     = /opt/dist/jython-2.2.1
+java.class.path = ${python.home}/jython.jar
+hashdot.main    = org.python.util.jython

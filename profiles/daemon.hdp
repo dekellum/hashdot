@@ -1,0 +1,19 @@
+# HashDot launch profile to daemonize a process
+#. hashdot.profile = daemon
+
+# This will have hashdot fork and setsid prior to launching the JVM.
+hashdot.daemonize = true
+
+# Redirect STDOUT/STDERR to a specified file.
+
+# It is strongly encouraged to redirect STDOUT/STDERR to a file other
+# than /dev/null when running as a daemon. Consider that java level
+# errors/crashes and "kill -QUIT" instigated stack dumps will all go
+# to STDERR. You can also send your java level log to this file.  Roll
+# it with an external agent like logrotate with "copytruncate" This
+# typically be overridden in the specific daemon script.
+hashdot.io_redirect.file = ./hashdot.log
+
+# Open for append to redirect.file (default)
+# Set to "false" to overwrite the file.
+# hashdot.io_redirect.append = true

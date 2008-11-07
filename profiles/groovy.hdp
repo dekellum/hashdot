@@ -1,0 +1,24 @@
+# HashDot launch profile for Groovy (http://groovy.codehaus.org/)
+#. hashdot.profile = groovy
+
+groovy.home       = /opt/dist/groovy-1.5.6
+java.class.path   = ${groovy.home}/lib/groovy-*.jar
+hashdot.main      = org.codehaus.groovy.tools.GroovyStarter
+
+# Appeared desired by jruby
+script.name       = ${groovy.home}/bin/groovy
+program.name      = groovy
+groovy.start.conf = ${groovy.home}/conf/groovy-starter.conf
+tools.jar         = ${hashdot.vm.home}/lib/tools.jar
+
+# Passed as args for launch
+hashdot.args.pre  = --main groovy.ui.GroovyMain --conf ${groovy.start.conf} 
+hashdot.args.pre += --classpath .
+
+# Arguments following these flags are _not_ a script to scan for
+# hashdot headers.  
+hashdot.parse_flags.value_args = -D -a -c -l
+
+# Give up looking for a script header with any of these
+hashdot.parse_flags.terminal = -e -h
+

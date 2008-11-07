@@ -1,0 +1,284 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+  <title>Hashdot Property Reference</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+<h1>Hashdot: Property Reference</h1>
+<div class="nav">
+<a href="index.html">Main</a> |
+Reference |
+<a href="COPYING">License</a> |
+<a href="http://sourceforge.net/project/showfiles.php?group_id=240265">Download</a>
+</div>
+
+<ul>
+  <li><a href="#syntax">Syntax</a>
+  <ul>
+    <li><a href="#encoding">Character Encoding</a></li>
+    <li><a href="#header">Script Header</a></li>
+    <li><a href="#profiles">Profiles</a></li>
+    <li><a href="#directives">Property directives</a></li>
+  </ul></li>
+  <li><a href="#load_order">Load Order</a></li>
+  <li><a href="#special">Special Properties</a>
+  <ul>
+    <li><a href="#hashdot.profile">hashdot.profile</a></li>
+    <li><a href="#java.class.path">java.class.path</a></li>
+    <li><a href="#hashdot.vm.libpath">hashdot.vm.libpath</a></li>
+    <li><a href="#hashdot.vm.options">hashdot.vm.options</a></li>
+    <li><a href="#hashdot.version">hashdot.version</a></li>
+    <li><a href="#hashdot.script">hashdot.script</a></li>
+    <li><a href="#hashdot.main">hashdot.main</a></li>
+    <li><a href="#hashdot.parse_flags.*">hashdot.parse_flags.*</a>
+    <ul>
+      <li><a href="#hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></li>
+      <li><a href="#hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></li>
+    </ul></li>
+    <li><a href="#hashdot.daemonize">hashdot.daemonize</a></li>
+    <li><a href="#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
+    <ul>
+      <li><a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a></li>
+      <li><a href="#hashdot.io_redirect.append">hashdot.io_redirect.append</a></li>
+    </ul></li>
+    <li><a href="#hashdot.env.*">hashdot.env.*</a></li>
+    <li><a href="#hashdot.args.pre">hashdot.args.pre</a></li>
+  </ul></li>
+  <li><a href="#environment">Environment Variables</a>
+  <ul>
+    <li><a href="#HASHDOT_DEBUG">HASHDOT_DEBUG</a></li>
+  </ul></li>
+</ul>
+
+<h2><a name="syntax">Syntax</a></h2>
+
+<h3><a name="encoding">Character Encoding</a></h3>
+
+<p>Hashdot script headers and profiles are parsed as UTF-8. In normal
+usage, hashdot property value will be constrained to the ASCII subset,
+and thus compatible with other ASCII-compatible script encodings.</p>
+
+<h3><a name="header">Script Header</a></h3>
+
+<p>A script <i>header block</i> is defined as an initial contiguous
+sequence of all lines beginning with the '#' comment character. The
+first line not beginning with '#' terminates the header block.  With
+this block, any lines beginning with '#.' will be parsed as hashdot
+property directives.  All other lines within the header are interpreted
+as "regular" comments.</p>
+
+<pre>#!/usr/local/bin/hashdot
+# Comment
+#. property.name = value
+## Comment
+#. property.other = "other value"
+## End of Header (next line doesn't start with '#')
+
+puts "hello"
+</pre>
+
+<h3><a name="profiles">Hashdot Profiles</a></h3>
+
+<p>Profiles are collections of property directives in *.hdp files
+under a profile directory specified at hashdot compile time. In a
+profile, lines starting with "#" are normal comments and property
+directives are specified without a leading "#." Example:</p>
+
+<pre># Hashdot example profile
+property.name = value
+</pre>
+
+<h3><a name="directives">Property directives</a></h3>
+
+<p>Single values and strings:</p>
+
+
+<pre>#. x.y.z = constant_value
+#. x.y.z = "string value"
+</pre>
+
+<p>List values:</p>
+
+<pre>#. some.list = value1 value2 value3
+#. another.list = mixed "string values" list
+</pre>
+
+<p>List addition:</p>
+
+<pre>#. some.list  = first
+#. some.list += second
+==>             first second
+</pre>
+
+<p>Variable reference expansion:</p>
+
+<pre>#. prop.one = first
+#. prop.two = ${prop.one}/second
+==>           first/second
+
+#. prop.one = a b
+#. prop.two = ${prop.one} c d
+==>           a b c d
+</pre>
+
+<h2><a name="load_order">Load Order</a></h2>
+
+<p>Properties are read from profiles and the script header in the
+following order.</p>
+
+<ol>
+  <li>The default profile</li>
+  <li>If hashdot is called via a symlink, the profile of the same name.
+  <ul>
+    <li>Any 'hashdot.profile' references in the order given.</li>
+  </ul></li>
+  <li>Script header
+  <ul>
+    <li>Header 'hashdot.profile...' references the order given.</li>
+  </ul></li>
+</ol>
+
+<p>Profiles are read at the point of reference and in the order
+referenced.  Currently profiles may be referenced and thus read more
+than once. Profile authors must exercise care to avoid circular
+references.</p>
+
+<h2><a name="special">Special Properties</a></h2>
+
+<p>The following properties have special meaning when processed by
+hashdot.</p>
+
+<h3><a name="hashdot.profile">hashdot.profile</a></h3>
+
+<p>Load the specified values as properties. Each profile is read from
+compiled in profile directory, i.e. "jruby" is loaded from
+"/etc/hashdot/profiles/jruby.hdp". Profiles are imported in the order
+specified (including nested imports) and are implied += for purposes
+of passing the final "hashdot.profile" property to the JVM.
+Example:</p>
+
+<pre>#. hashdot.profile += shortlived
+</pre>
+
+<h3><a name="java.class.path">java.class.path</a></h3>
+
+<p>Used to set the Java system class path (equiv. to '-cp' java
+launcher argument. Supports file name globs on values (* and ?
+wildcards). Values are joined with a ':' as per Java UNIX
+format. Example:</p>
+
+<pre>#. java.class.path += /opt/myservice/lib/*.jar
+</pre>
+
+<p>Note that CLASSPATH environment variable is ignored, as use of
+environment variables for normal operation of scripts discouraged.</p>
+
+<h3><a name="hashdot.vm.libpath">hashdot.vm.libpath</a></h3>
+
+<p>All path values are prepended to LD_LIBRARY_PATH in order to load
+Java libjvm.so and its dependencies.</p>
+
+<h3><a name="hashdot.vm.options">hashdot.vm.options</a></h3>
+
+<p>Java VM options in flag format as per the java command line. See
+java tool docs for details. The "-server" option is actually achieved
+via hashdot.vm.libpath including server and should not be included
+here. Note that the last setting of any equivalent option wins, thus
+appending to this property will function as an override. Example:</p>
+
+<pre>#. hashdot.vm.options  = -Xmx500m -Xss1024k
+#. hashdot.vm.options += -Xmx1500m
+==>                      -Xmx1500m -Xss1024k
+</pre>
+
+<h3><a name="hashdot.version">hashdot.version</a></h3>
+
+<p>Set by hashdot to the hashdot launcher version.</p>
+
+<h3><a name="hashdot.script">hashdot.script</a></h3>
+
+<p>Set by hashdot to any identified script file to be used as the
+first argument to the intepreter.</p>
+
+<h3><a name="hashdot.main">hashdot.main</a></h3>
+
+<p>The java class containing a static main method to call, with the
+script as its first argument.  This property is required.</p>
+
+<pre>#. hashdot.main = com.gravitext.hashdot.TestMain
+</pre>
+
+<h3><a name="hashdot.parse_flags.*">hashdot.parse_flags.*</a></h3>
+
+<p>These properties control interpretation of arguments to identify a
+script file to read for Hashdot headers.</p>
+
+<h4><a name="hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></h4>
+
+<p>A list of flags with following value arguments that will not be
+interpreted as a script file name.</p>
+
+<h4><a name="hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></h4>
+
+<p>A list of flags that will cause hashdot to terminate looking for a
+script file.</p>
+
+<h3><a name="hashdot.daemonize">hashdot.daemonize</a></h3>
+
+<p>See profile "daemon.hdp". If set to value != "false", Hashdot will
+fork and setsid prior to launching the JVM.</p>
+
+<h3><a name="hashdot.io_redirect.*">hashdot.io_redirect.*</a></h3>
+
+<p>These properties control redirecting STDOUT/STDERR on startup. It
+is strongly encouraged to redirect to a file other than /dev/null when
+running as a daemon (See hashdot.daemonize above.) Consider that java
+level errors/crashes and "kill -QUIT" stack dumps will all go to
+STDERR. You can also send your java level log to this file.  Roll it
+with an external agent like logrotate with "copytruncate". This should
+typically be overridden in the specific daemon script.</p>
+
+<h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
+
+<p>Will redirect STDOUT/STDERR to the named file.</p>
+
+<h4><a name="hashdot.io_redirect.append">hashdot.io_redirect.append</a></h4>
+
+<p>Unless this variable is set to "false" the file specified by
+redirect file will be opened for append.</p>
+
+<h3><a name="hashdot.env.*">hashdot.env.*</a></h3>
+
+<p>Setting a property with this prefix sets the equivalent
+non-prefexed environment variable. For example:</p>
+
+<pre>#. hashdot.env.GEM_HOME = /opt/jruby/gems
+</pre>
+
+<p>Sets GEM_HOME to "/opt/jruby/gems" in the environment. Note:
+Currently variable references with this prefix do not provide access
+to all environment variables, but only those previously set with a
+hashdot property.  This features is intended as a workaround for cases
+where an interpreter has existing environment dependencies.</p>
+
+<h3><a name="hashdot.args.pre">hashdot.args.pre</a></h3>
+
+<p>A list of arguments to be prepended to the argument array passed to
+the 'hashdot.main' method (before any script file and arguments passed
+by the user on the command line.)</p>
+
+<h2><a name="environment">Environment Variables</a></h2>
+
+<h3><a name="HASHDOT_DEBUG">HASHDOT_DEBUG</a></h3>
+
+<p>If set in the environment, verbose debug logging is enabled to
+standard error.</p>
+
+<div class="copyright">
+  Copyright 2008, David Kellum.  All rights reserved.
+</div>
+</body>
+</html>
+

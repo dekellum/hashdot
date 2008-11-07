@@ -1,0 +1,12 @@
+# HashDot profile for shortlived jruby scripts.
+#. hashdot.profile = jruby-shortlived
+
+# Extends shortlived (client VM) and (jruby) profiles with further
+# startup time tweeks.
+hashdot.profile = shortlived jruby
+
+# JMX setup slows startup and wont be used
+jruby.management.enabled=false
+
+# Don't bother trying to compile
+jruby.compile.mode=OFF

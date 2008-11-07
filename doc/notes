@@ -1,0 +1,167 @@
+
+JRUBY-1134 
+
+http://jira.codehaus.org/browse/GROOVY-1936
+http://groovy.codehaus.org/Native+Launcher
+
+Demo groovy launcher, suggest merge?
+
+Usage: hashdot.header.comment = //
+
+
+Sourceforge:
+
+Upload docs to http://hashdot.sourceforge.com:
+
+rsync -auP hashdot-1.0/doc/ dekellum,hashdot@web.sourceforge.net:/home/groups/h/ha/hashdot/htdocs/
+
+
+Upload release file:
+
+rsync -auP hashdot-1.1-src.tar.gz  dekellum@frs.sourceforge.net:uploads/
+
+=== Regular expression notation for properties ===
+
+name (+)?= :::
+
+\s+([^\s+="])+\s*(\+)?=\s+
+
+(value)+ :::
+
+((["](\\["]|[^"])+["])|([^"\s]))\s+
+
+
+String values:
+
+\\ -> \
+\" -> "
+\n -> NEWLINE
+\r -> CR
+\t -> TAB
+\$ -> $
+
+Glob escapes?:
+\? -> ? 
+\* -> * 
+
+
+${property}
+
+
+=== Option prefixes ===
+
+The following option patterns are considered equivelent options such
+that the last value added via a += or = is the value passed on
+creation of the JVM:
+
+(.*)=
+ 
+-Xms
+-Xmx
+-Xss
+-Xloggc:
+-Xshare:
+-Xbootclasspath:
+-splash:
+
+
+=== Additional features ===
+
+# Add arbitrary arguments to the command line passed to java
+#. hashdot.args.pre = -T3
+
+# Set environment variables before running java.
+#.env.GEM_HOME = 
+
+
+=== Argument State across Exec's etc ===
+
+(path/)hashdot
+(path/)hashdot -e 'puts "hello";' 
+
+--> Usage: hashdot <script>
+
+(path/)jruby -e 'puts "hello";'
+
+--> keep first arg in place,
+--> don't attempt to read any profile (first param begins with '-')
+
+(path/)hashdot my-script
+
+--> unshift hashdot arg on exec
+
+(path/)jruby my-script
+
+--> same as above, but also include jruby profile
+
+
+
+
+
+
+
+Usage: jruby [switches] [--] [programfile] [arguments]
+  -0 [octal]       specify record separator (, if no argument)
+  -a              autosplit mode with -n or -p (splits $_ into $F)
+  -b              benchmark mode, times the script execution
+  -c              check syntax only
+  -Cdirectory     cd to directory, before executing your script
+  -d              set debugging flags (set $DEBUG to true)
+  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]
+  -Fpattern       split() pattern for autosplit (-a)
+  -Idirectory     specify $LOAD_PATH directory (may be used more than once)
+  -J[java option] pass an option on to the JVM (e.g. -J-Xmx512m)
+                    use --properties to list JRuby properties
+                    run 'java -help' for a list of other Java options
+  -Kkcode         specifies code-set (e.g. -Ku for Unicode
+  -l              enable line ending processing
+  -n              assume 'while gets(); ... end' loop around your script
+  -p              assume loop like -n but print line also like sed
+  -rlibrary       require the library, before executing your script
+  -s              enable some switch parsing for switches after script name
+  -S              look for the script in bin or using PATH environment variable
+  -T[level]       turn on tainting checks
+  -v              print version number, then turn on verbose mode
+  -w              turn warnings on for your script
+  -W[level]       set warning level; 0=silence, 1=medium, 2=verbose (default)
+  -X[option]      enable extended option (omit option to list)
+  --copyright     print the copyright
+  --debug         sets the execution mode most suitable for debugger functionality
+  --jdb           runs JRuby process under JDB
+  --properties    List all configuration Java properties (pass -J-Dproperty=value)
+  --sample        run with profiling using the JVM's sampling profiler
+  --client        use the non-optimizing "client" JVM (improves startup; default)
+  --server        use the optimizing "server" JVM (improves perf)
+  --manage        enable remote JMX management and monitoring of the VM and JRuby
+  --1.8           specify Ruby 1.8.x compatibility (default)
+  --1.9           specify Ruby 1.9.x compatibility
+  --bytecode      show the JVM bytecode produced by compiling specified code
+  --version       print the version
+
+
+hashdot.ignore_flag_args = -C -e -F -I -r
+
+
+
+usage: jython [options] [-jar jar | -c cmd | file | -] [args]
+Options and arguments:
+-i       : inspect interactively after running script, and force
+           prompts, even if stdin does not appear to be a terminal
+-S       : don't imply `import site' on initialization
+-v       : verbose (trace import statements)
+-Dprop=v : Set the property `prop' to value `v'
+-jar jar : program read from __run__.py in jar file
+-c cmd   : program passed in as string (terminates option list)
+-W arg   : warning control (arg is action:message:category:module:lineno)
+-E codec : Use a different codec the reading from the console.
+-Q arg   : division options: -Qold (default), -Qwarn, -Qwarnall, -Qnew
+file     : program read from script file
+-        : program read from stdin (default; interactive mode if a tty)
+--help   : print this usage message and exit
+--version: print Jython version number and exit
+args     : arguments passed to program in sys.argv[1:]
+
+
+-->
+
+hashdot.ignore.flags = -W -Q -E -jar -c

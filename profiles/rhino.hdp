@@ -1,0 +1,9 @@
+# HashDot launch profile for Rhino (http://www.mozilla.org/rhino/)
+#. hashdot.profile = rhino
+
+rhino.home      = /opt/dist/rhino1_7R1
+java.class.path = ${rhino.home}/js.jar 
+hashdot.main    = org.mozilla.javascript.tools.shell.Main
+
+hashdot.parse_flags.value_args = -opt -version
+hashdot.parse_flags.terminal   = -e 

@@ -1,0 +1,11 @@
+# HashDot profile for short lived processes.
+# Overrides default.hdp to use the client VM.
+#. hashdot.profile = shortlived
+
+# Note: for current amd64 java distros, this entire profile should be
+# commented out to disable it, since these only include a server VM
+
+hashdot.vm.mode     = client
+
+hashdot.vm.libpath  = ${hashdot.vm.libbase}
+hashdot.vm.libpath += ${hashdot.vm.libbase}/${hashdot.vm.mode}

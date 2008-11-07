@@ -1,0 +1,29 @@
+                      Build and Install Hashdot
+
+Note: This needs some work, in particular use of autoconf, etc.
+
+Instructions:
+
+1. Install build dependencies:
+
+   * GNU make (3.81+)
+   * gcc (4.1.2+)
+   * Apache Portable Runtime: apr, apr-devel (1.2.11+) 
+   * Java JDK 
+   
+2. Edit Makefile
+
+   * Change JAVA_HOME to installed JDK
+   * Change INSTALL_BIN to desired location of hashdot binary and symlinks
+   * Change PROFILE_DIR to desired locaiton of hashdot profiles
+     (i.e. /etc/hashdot/profiles)
+   * (Optional) Change set of hashdot symlinks as desired for install.
+
+3. Build and install
+
+% make
+% make install
+
+4. Configure installed profiles to suite your environment. In
+   particular, see default.hdp for runtime hashdot.vm.home, etc.
+

@@ -1,0 +1,55 @@
+#!/usr/bin/env jruby
+# -*- ruby -*-
+#. hashdot.profile = jruby-shortlived
+
+puts "Ruby $0 = #{$0}"
+puts "Ruby __FILE__ = #{ __FILE__ }"
+puts "Ruby ARGV[] = [ #{ARGV.join(' ')} ]"
+
+# Save of orginals args since test/unit will consume them below
+ARGV_ORIG = ARGV.dup
+
+# Parse and return args array from null seperated /proc/self/cmdline
+def proc_command_line
+  args = []
+  File.open( "/proc/self/cmdline", 'rb' ) do |f|
+    f.each( "\0" ) do |l| 
+      args << l.chomp( "\0" ) 
+    end
+  end
+  args
+end
+
+puts "/proc/self/cmdline: #{ proc_command_line.join( ' ' ) }"
+puts
+
+
+[ "ps -p #{Process.pid}", 
+  "ps -f -p #{Process.pid}",
+  "pgrep -lf #{$0}" ].each do |command| 
+  puts command
+  IO.popen( command, "r" ) do |cout|
+    puts cout.readlines
+  end
+  puts
+end     
+
+
+puts "/proc/self/exe -> #{ File.readlink( '/proc/self/exe' ) }"
+
+require 'test/unit'
+
+class TestCmdLine < Test::Unit::TestCase
+  
+  def test_script_is_arg_zero
+    assert_equal( __FILE__ , $0 )
+  end
+  
+  def test_proc_command_line
+    assert_equal( [ 'jruby', $0 ] + ARGV_ORIG, proc_command_line )
+  end
+
+  def test_found_self
+    assert( system "pgrep -lf #{$0}" )
+  end
+end

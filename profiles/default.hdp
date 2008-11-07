@@ -1,0 +1,29 @@
+# HashDot default launch profile 
+# This profile is always read before any other profiles or hashdot
+# properties
+
+## Setup the default JVM 
+
+# JVM install directory
+# Note: avoid using the obvious "java.home" name for this, as java
+# boot strap will automaticly set that, and thus we shouldn't.
+hashdot.vm.home = /opt/java/jdk_sun_1.6.0_05_x32
+
+# Use "amd64" instead of i386 for linux 64bit platforms
+hashdot.vm.arch     = i386
+
+# Use server by default (see alternative in shortlived.hdp)
+hashdot.vm.mode     = server
+
+hashdot.vm.libbase  = ${hashdot.vm.home}/jre/lib/${hashdot.vm.arch}
+
+# Setup libpath to find libjvm.so and dependencies.
+# Note: "native_threads" is found by java and "jli" (java launch
+# interface?) appears to only be used by stock "java" launcher.
+# The base directory and (server|client) appear to be the only
+# directories needed, at least with Sun JVMs.
+hashdot.vm.libpath  = ${hashdot.vm.libbase}
+hashdot.vm.libpath += ${hashdot.vm.libbase}/${hashdot.vm.mode}
+
+
+
