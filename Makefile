@@ -13,7 +13,7 @@ INSTALL_BIN=/usr/local/bin
 # export PROFILE_DIR=./profiles to work from sandbox
 PROFILE_DIR?=/etc/hashdot/profiles
 
-VERSION=1.1
+VERSION=1.2
 
 CC=gcc
 CFLAGS=$(shell ${APR_CONFIG} --cflags --cppflags --includes) -O2 -Wall -fno-strict-aliasing -g \
@@ -53,6 +53,7 @@ test: hashdot
 	test/cmdline param1 param2
 	test/test_props.rb 
 	test/test_env.rb
+	test/test_chdir.rb
 
 clean: 
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot

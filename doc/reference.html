@@ -9,6 +9,7 @@
 <h1>Hashdot: Property Reference</h1>
 <div class="nav">
 <a href="index.html">Main</a> |
+<a href="change_log.html">Change Log</a> |
 Reference |
 <a href="COPYING">License</a> |
 <a href="http://sourceforge.net/project/showfiles.php?group_id=240265">Download</a>
@@ -37,6 +38,7 @@ Reference |
       <li><a href="#hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></li>
       <li><a href="#hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></li>
     </ul></li>
+    <li><a href="#hashdot.chdir">hashdot.chdir</a></li>
     <li><a href="#hashdot.daemonize">hashdot.daemonize</a></li>
     <li><a href="#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
     <ul>
@@ -225,6 +227,14 @@ interpreted as a script file name.</p>
 <p>A list of flags that will cause hashdot to terminate looking for a
 script file.</p>
 
+<h3><a name="hashdot.chdir">hashdot.chdir</a></h3>
+
+<p>Change the process working directory to specified path. This is
+provided since the working directory can not be set from Java, and is
+typically used in conjunction with the daemon profile.  Any
+java.class.path values or hashdot.io_redirect.file may be specified
+relative to the new working directory.</p>
+
 <h3><a name="hashdot.daemonize">hashdot.daemonize</a></h3>
 
 <p>See profile "daemon.hdp". If set to value != "false", Hashdot will
@@ -232,22 +242,27 @@ fork and setsid prior to launching the JVM.</p>
 
 <h3><a name="hashdot.io_redirect.*">hashdot.io_redirect.*</a></h3>
 
-<p>These properties control redirecting STDOUT/STDERR on startup. It
-is strongly encouraged to redirect to a file other than /dev/null when
-running as a daemon (See hashdot.daemonize above.) Consider that java
-level errors/crashes and "kill -QUIT" stack dumps will all go to
-STDERR. You can also send your java level log to this file.  Roll it
-with an external agent like logrotate with "copytruncate". This should
-typically be overridden in the specific daemon script.</p>
+<p>These properties control redirecting STDOUT and STDERR on
+startup. It is strongly encouraged to redirect to a file other than
+/dev/null when running as a daemon (See hashdot.daemonize above.)
+Consider that java level errors/crashes and "kill -QUIT" stack dumps
+will all go to STDERR.  The full script log output may also be sent to
+this file via STDOUT/STDERR.  The log may be rolled via an an external
+agent like logrotate using the standard "postrotate" HUP signal.  These
+properties should typically be overridden in the specific daemon
+script.</p>
 
 <h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
 
-<p>Will redirect STDOUT/STDERR to the named file.</p>
+<p>Will redirect STDOUT/STDERR to the named file. When set in
+conjunction with hashdot.daemonize, a HUP signal handler will also be
+registered (after the JVM is loaded) to reopen the named file. This
+facilitates using external log rotating utilities like logrotate.</p>
 
 <h4><a name="hashdot.io_redirect.append">hashdot.io_redirect.append</a></h4>
 
 <p>Unless this variable is set to "false" the file specified by
-redirect file will be opened for append.</p>
+hashdot.io_redirect.file will be opened for append.</p>
 
 <h3><a name="hashdot.env.*">hashdot.env.*</a></h3>
 

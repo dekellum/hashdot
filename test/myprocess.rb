@@ -1,4 +1,4 @@
-#!/usr/local/bin/jruby-shortlived
+#!/usr/bin/env jruby
 # -*- ruby -*-
 #. hashdot.vm.options += -Xmx256m
 ## Deamonize on startup:

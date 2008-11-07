@@ -47,6 +47,7 @@
 #include <apr_dso.h>
 #include <apr_env.h>
 #include <apr_lib.h>
+#include <apr_signal.h>
 
 #include <jni.h>
 
@@ -86,6 +87,13 @@ static apr_status_t
 set_script_prop( const char *sname,
                  apr_hash_t *props, 
                  apr_pool_t *mp );
+
+
+static apr_status_t
+check_hashdot_cwd( apr_hash_t *props, 
+                   const char **script,
+                   apr_pool_t *mp );
+
            
 static apr_status_t
 check_daemonize( apr_hash_t *props, 
@@ -135,6 +143,11 @@ skip_flags( apr_hash_t *props,
             const char *argv[],
             int *file_offset );
 
+static apr_status_t install_hup_handler();
+
+static void reopen_streams( int signo );
+
+static const char * _redirect_fname = NULL;
 static int _debug = 0;
 
 #define DEBUG(format, args...) \
@@ -246,6 +259,12 @@ int main( int argc, const char *argv[] )
         rv = set_version_prop( props, mp );
     }
     
+    if( rv == APR_SUCCESS ) {
+        rv = check_hashdot_cwd( props, 
+                                (file_offset > 0) ? argv + file_offset : NULL, 
+                                mp );
+    }
+
     if( rv == APR_SUCCESS ) {
         rv = check_daemonize( props, mp );
     }
@@ -522,7 +541,7 @@ parse_hashdot_header( const char *fname,
     } \
     else { \
         ERROR( "Buffer length exceeded: %d >= %d", \
-               pbuff - buff + len, sizeof( buff ) ); \
+               (int) (pbuff - buff + len), (int) sizeof( buff ) ); \
         rv = 8; \
     }
 
@@ -638,7 +657,8 @@ parse_line( char *line,
                 SAFE_APPEND( value, voutp, b, p - b );
                 p++;
                 if( ( voutp - value + 1 ) >= sizeof( value ) ) {
-                    ERROR( "Buffer length exceeded: %d", sizeof( value ) );
+                    ERROR( "Buffer length exceeded: %d", 
+                           (int) sizeof( value ) );
                     rv = 8;
                     goto END_LOOP;
                 }
@@ -687,7 +707,8 @@ parse_line( char *line,
                 for( i = 0; i < vals->nelts; i++ ) {
                     if( i > 0 ) *(voutp++) = ' ';
                     const char *rval = ((const char **) vals->elts )[i];
-                    DEBUG( "Variable name: %s, replacement value: %s", vname, rval );
+                    DEBUG( "Variable name: %s, replacement value: %s", 
+                           vname, rval );
                     int rlen = strlen( rval );
                     SAFE_APPEND( value, voutp, rval, rlen );
                 }
@@ -714,7 +735,7 @@ parse_line( char *line,
             j--;
         }
         ERROR( "%s [%d, %d] at: %.*s[%c]", 
-               PARSE_LINE_ERRORS[ rv-10 ], rv, state, p - line, line, 
+               PARSE_LINE_ERRORS[ rv-10 ], rv, state, (int) (p - line), line,
                ( IS_WS( *p ) || ( *p == '\0' ) ) ? ' ' : *p );
     }
     
@@ -840,9 +861,12 @@ init_jvm( apr_pool_t *mp,
     if( rv == APR_SUCCESS ) {
         rv = (*create_jvm_func)(&vm, &env, &vm_args);
     }
+    
+    if( rv == APR_SUCCESS ) {
+        rv = install_hup_handler();
+    }
 
     vals = apr_hash_get( props, MAIN_PROP, strlen( MAIN_PROP ) + 1 );
-
     const char *main_name = NULL;
     if( vals && ( vals->nelts == 1 ) ) {
         main_name = convert_class_name( mp, ((const char **) vals->elts )[0] );
@@ -880,11 +904,7 @@ init_jvm( apr_pool_t *mp,
             rv = 5;
         }
     }
-
     
-    if( rv == APR_SUCCESS ) {
-    }
-
     jobjectArray args = NULL;
     if( rv == APR_SUCCESS ) {
         vals = apr_hash_get( props, ARGS_PRE_PROP, 
@@ -1172,6 +1192,47 @@ skip_flags( apr_hash_t *props,
     return rv;
 }
 
+
+static apr_status_t
+check_hashdot_cwd( apr_hash_t *props, 
+                   const char **script,
+                   apr_pool_t *mp )
+{
+    apr_status_t rv = APR_SUCCESS;
+    static const char *CHDIR_PROP  = "hashdot.chdir";
+
+    apr_array_header_t *vals = NULL;
+    char * nwd = NULL;
+
+    vals = apr_hash_get( props, CHDIR_PROP, strlen( CHDIR_PROP ) + 1 );
+    if( vals != NULL ) {
+        const char * rel_wd = apr_array_pstrcat( mp, vals, '/' );
+        rv = apr_filepath_merge( &nwd, NULL, rel_wd, 0, mp );
+    }
+    if( ( rv == APR_SUCCESS ) && ( nwd != NULL ) ) {
+        char * cwd = NULL;
+        rv = apr_filepath_get( &cwd, 0, mp );
+        if( ( rv == APR_SUCCESS ) &&  ( strcmp( cwd, nwd ) != 0 ) ) {
+            
+            // Convert to absolute script path if provided.
+            if( script != NULL ) {
+                char *absolute_script = NULL;
+                apr_filepath_merge( &absolute_script, NULL, *script, 0, mp );
+                *script = absolute_script;
+                DEBUG( "Absolute script path is %s", absolute_script );
+            }
+
+            DEBUG( "Changing working dir to %s", nwd );
+            rv = apr_filepath_set( nwd, mp );
+
+            if( rv != APR_SUCCESS ) {
+                print_error( rv, nwd );
+            }
+        }
+    }
+    return rv;
+}
+
 static apr_status_t
 check_daemonize( apr_hash_t *props, 
                  apr_pool_t *mp )
@@ -1192,6 +1253,7 @@ check_daemonize( apr_hash_t *props,
     if( vals != NULL ) {
         val = apr_array_pstrcat( mp, vals, ':' );
     }
+    int daemon = 0;
     if( ( val != NULL ) && ( strcmp( val, "false" ) != 0 ) ) {
 
         DEBUG( "Forking daemon." );
@@ -1209,6 +1271,7 @@ check_daemonize( apr_hash_t *props,
                 rv = APR_FROM_OS_ERROR( errno );
             }
         }
+        daemon = 1;
     }
 
     if( rv == APR_SUCCESS ) {
@@ -1236,8 +1299,30 @@ check_daemonize( apr_hash_t *props,
                 ( freopen( fname, append ? "a" : "w", stderr ) == NULL ) ) {
                 rv = APR_FROM_OS_ERROR( errno );
             }
+
+            if( daemon ) _redirect_fname = fname;
         }
     }
 
     return rv;
+}
+
+static void reopen_streams( int signo )
+{
+    if( _redirect_fname != NULL ) {
+        if( freopen( _redirect_fname, "a", stdout ) == NULL ) {
+            print_error( APR_FROM_OS_ERROR( errno ), "freopen stdout" );
+        }
+        if( freopen( _redirect_fname, "a", stderr ) == NULL ) {
+            print_error( APR_FROM_OS_ERROR( errno ), "freopen stderr" );
+        }
+    }
+}
+
+static apr_status_t install_hup_handler()
+{
+    if( _redirect_fname != NULL ) {
+        apr_signal( SIGHUP, &reopen_streams );
+    }
+    return APR_SUCCESS;
 }
