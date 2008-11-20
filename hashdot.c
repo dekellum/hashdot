@@ -37,7 +37,17 @@
 #include <unistd.h>
 #include <stdlib.h>
 
+#if defined(__APPLE__) && ( defined(__MACH__) || defined(__DARWIN__) ) && !defined(__MacOS_X__)
+#define __MacOS_X__ 1
+#endif
+
+#ifdef __MacOS_X__
+#include <mach-o/dyld.h>
+#define JVM_LIB_NAME "/System/Library/Frameworks/JavaVM.framework/Libraries/libjvm.dylib"
+#else
 #include <sys/prctl.h>
+#define JVM_LIB_NAME "libjvm.so"
+#endif
 
 #include <apr_general.h>
 #include <apr_file_io.h>
@@ -136,6 +146,10 @@ static apr_status_t
 find_self_exe( const char **exe_name,
                apr_pool_t *mp );
 
+static apr_status_t
+set_process_name( int argc,
+                  const char *argv[],
+                  char *name );
 
 static apr_status_t
 skip_flags( apr_hash_t *props,
@@ -161,9 +175,8 @@ static int _debug = 0;
     fprintf( stderr, format , ## args); \
     fprintf( stderr, "\n" );
 
-int main( int argc, const char *argv[] ) 
+int main( int argc, const char *argv[], const char *envp[] ) 
 {
-
     apr_status_t rv = apr_initialize();
     if( rv != APR_SUCCESS ) {
         return -1;
@@ -249,9 +262,7 @@ int main( int argc, const char *argv[] )
             rename = called_as;
         }
         if( rename != NULL ) {
-            if( prctl( PR_SET_NAME, rename, 0, 0, 0 ) == -1 ) {
-                rv = APR_FROM_OS_ERROR( errno );
-            }
+            rv = set_process_name(argc, argv, rename);
         }
     }
         
@@ -934,11 +945,12 @@ init_jvm( apr_pool_t *mp,
                 }
             }
         }
+
         if( args ) {
             int i;
             for( i = 0; i < argc; i++ ) {  //start at arg 0 (post adjusted)
                 jstring arg = (*env)->NewStringUTF( env, argv[i] );
-
+DEBUG( "setting: %s", argv[i] );
                 if( arg ) {
                     (*env)->SetObjectArrayElement( env, args, argp++, arg );
                     (*env)->DeleteLocalRef( env, arg );
@@ -1006,7 +1018,7 @@ get_create_jvm_function( apr_pool_t *mp,
 
     apr_dso_handle_t *lib;
    
-    rv = apr_dso_load( &lib, "libjvm.so", mp ); // FIXME: UNIX-only
+    rv = apr_dso_load( &lib, JVM_LIB_NAME, mp ); // FIXME: UNIX-only
 
     //FIXME: Any advantage to RTLD_GLOBAL|RTLD_NOW flags?
 
@@ -1128,14 +1140,43 @@ find_self_exe( const char **exe_name,
 {
     apr_status_t rv = APR_SUCCESS;
     char buffer[1024];
-    ssize_t size = readlink( "/proc/self/exe", buffer, sizeof( buffer ) );
-    if( size < 0 ) {
+#ifdef __MacOS_X__
+    uint32_t length = sizeof (buffer);
+    if (_NSGetExecutablePath(buffer, &length) == 0 && buffer[0] == '/') {
+        *exe_name = apr_pstrndup( mp, buffer, length );
+    } else {
+        ERROR("failed to find exe: %s", strerror(errno));
         rv = APR_FROM_OS_ERROR( errno );
     }
-    else {
+#else
+    ssize_t size = readlink( "/proc/self/exe", buffer, sizeof( buffer ) );
+    if( size < 0 ) {
+        ERROR("readlink failed: %s", strerror(errno));
+        rv = APR_FROM_OS_ERROR( errno );
+    } else {
         *exe_name = apr_pstrndup( mp, buffer, size );
     }
+#endif
     return rv;
+}
+
+static apr_status_t
+set_process_name( int argc,
+                  const char *argv[],
+                  char *name )
+{       
+    apr_status_t rv = apr_initialize(); 
+    DEBUG("Renaming Process to: %s",  name);
+#ifdef __MacOS_X__
+    // TODO: set proc title on OSX
+    ERROR("Process rename not currently available on OSX");
+    return rv;
+#else
+    if( prctl( PR_SET_NAME, name, 0, 0, 0 ) == -1 ) {
+        rv = APR_FROM_OS_ERROR( errno );
+    }
+    return rv;
+#endif
 }
 
 static apr_status_t
