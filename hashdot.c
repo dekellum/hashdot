@@ -43,10 +43,15 @@
 
 #ifdef __MacOS_X__
 #include <mach-o/dyld.h>
+#include <dlfcn.h>
+#define LIB_PATH_VAR "DYLD_LIBRARY_PATH"
 #define JVM_LIB_NAME "/System/Library/Frameworks/JavaVM.framework/Libraries/libjvm.dylib"
+#define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM_Impl"
 #else
 #include <sys/prctl.h>
+#define LIB_PATH_VAR "LD_LIBRARY_PATH"
 #define JVM_LIB_NAME "libjvm.so"
+#define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM"
 #endif
 
 #include <apr_general.h>
@@ -196,7 +201,7 @@ int main( int argc, const char *argv[], const char *envp[] )
     char * called_as = NULL;
     if( rv == APR_SUCCESS ) {
         called_as = (char *) apr_filepath_name_get( argv[0] );
-        DEBUG( "Run as argv[0] = %s", called_as );
+        DEBUG( "Run as argv[0] = [%s]", called_as );
         if( strcmp( "hashdot", called_as ) == 0 ) {
             called_as = NULL;
             if( argc > 1 ) {
@@ -950,7 +955,7 @@ init_jvm( apr_pool_t *mp,
             int i;
             for( i = 0; i < argc; i++ ) {  //start at arg 0 (post adjusted)
                 jstring arg = (*env)->NewStringUTF( env, argv[i] );
-DEBUG( "setting: %s", argv[i] );
+                DEBUG( "setting: %s", argv[i] );
                 if( arg ) {
                     (*env)->SetObjectArrayElement( env, args, argp++, arg );
                     (*env)->DeleteLocalRef( env, arg );
@@ -1025,7 +1030,7 @@ get_create_jvm_function( apr_pool_t *mp,
     if( rv == APR_SUCCESS ) {
         rv = apr_dso_sym( (apr_dso_handle_sym_t *) symbol,
                           lib,
-                          "JNI_CreateJavaVM" );
+                          CREATE_JVM_FUNCTION_NAME );
     }
 
     if( rv != APR_SUCCESS ) {
@@ -1033,7 +1038,6 @@ get_create_jvm_function( apr_pool_t *mp,
         apr_dso_error( lib, errbuf, sizeof(errbuf) );
         ERROR( "[%d]: Loading jvm: %s", rv, errbuf );
     }
-
     return rv;
 }
 
@@ -1090,7 +1094,7 @@ exec_self( apr_hash_t *props,
     if( dpaths == NULL ) return rv;
 
     char * ldpenv = NULL;
-    apr_env_get( &ldpenv, "LD_LIBRARY_PATH", mp );
+    apr_env_get( &ldpenv, LIB_PATH_VAR, mp );
 
     apr_array_header_t *newpaths = 
         apr_array_make( mp, 8, sizeof( const char* ) );
@@ -1109,8 +1113,8 @@ exec_self( apr_hash_t *props,
             *( (const char **) apr_array_push( newpaths ) ) = ldpenv;
         }
         ldpenv = apr_array_pstrcat( mp, newpaths, ':' );
-        DEBUG( "New LD_LIBRARY_PATH = [%s]", ldpenv );
-        rv = apr_env_set( "LD_LIBRARY_PATH", ldpenv, mp );
+        DEBUG( "New %s = [%s]", LIB_PATH_VAR, ldpenv );
+        rv = apr_env_set( LIB_PATH_VAR, ldpenv, mp );
 
         const char *exe_name = NULL;
         if( rv == APR_SUCCESS ) {

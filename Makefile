@@ -56,6 +56,6 @@ test: hashdot
 	test/test_chdir.rb
 
 clean: 
-	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot
+	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
 
 .PHONY : test all install dist
