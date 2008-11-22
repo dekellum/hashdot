@@ -1237,7 +1237,7 @@ set_process_name( int argc,
     DEBUG("Renaming Process to: %s",  name);
 #ifdef __MacOS_X__
     // TODO: set proc title on OSX
-    ERROR("Process rename not currently available on OSX");
+    DEBUG( "Process rename not currently available on OSX" );
     return rv;
 #else
     if( prctl( PR_SET_NAME, name, 0, 0, 0 ) == -1 ) {

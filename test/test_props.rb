@@ -1,4 +1,4 @@
-#!/usr/bin/env hashdot
+#!./hashdot
 #. hashdot.profile = jruby-shortlived
 #
 ## Test properity setters via jruby Test::Unit on results.

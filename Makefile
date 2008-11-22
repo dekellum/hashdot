@@ -49,12 +49,11 @@ jruby: hashdot
 
 test: hashdot jruby
 	test/error/error_tests.sh
-	test/list_libs 
-	test/cmdline param1 param2
 	test/test_props.rb 
 	test/test_env.rb
 	test/test_chdir.rb
-	examples/hello.rb
+	test/test_daemon.rb
+	test/test_cmdline.rb param1 param2
 
 clean: 
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM

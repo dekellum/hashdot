@@ -11,7 +11,7 @@ def loaded_libs
   libs = []
   IO.popen( "lsof -p #{Process.pid}", "r" ) do |f|
     f.each do |line|
-      if line =~ /(\S+\.so)$/
+      if line =~ /(\S+\.(dylib|so))$/
         libs << $1
       end
     end

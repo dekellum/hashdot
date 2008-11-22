@@ -1,0 +1,8 @@
+#!./jruby
+#-*- ruby -*-
+#. hashdot.profile += daemon
+#. hashdot.chdir = ./test
+#. hashdot.io_redirect.append = false
+#. hashdot.io_redirect.file = ./daemon.log
+
+puts "hello from daemon"

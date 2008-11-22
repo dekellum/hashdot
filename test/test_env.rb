@@ -1,4 +1,4 @@
-#!/usr/bin/env hashdot
+#!./hashdot
 #.hashdot.profile = jruby-shortlived
 #
 #.hashdot.env.HVAR_1 = value

@@ -3,7 +3,6 @@
 #. hashdot.profile = jruby-shortlived
 
 require 'java'
-
 import 'java.lang.System'
 
 props = System.properties.key_set.map do |key|
