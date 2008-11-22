@@ -1,5 +1,5 @@
 #!/usr/bin/env hashdot
-## Above hash-bang could be /usr/local/bin/scala for simplicity
+## Above hashbang could be /opt/bin/scala for simplicity
 #. hashdot.profile = scala shortlived
 !#
 class HelloWorld {

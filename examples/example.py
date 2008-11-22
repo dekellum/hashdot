@@ -1,4 +1,4 @@
 #!/usr/bin/env hashdot
-#. hashdot.profile = shortlived jython
+#. hashdot.profile = jython shortlived 
 
 print "hello world!"

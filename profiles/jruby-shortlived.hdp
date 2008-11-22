@@ -7,6 +7,3 @@ hashdot.profile = shortlived jruby
 
 # JMX setup slows startup and wont be used
 jruby.management.enabled=false
-
-# Don't bother trying to compile
-jruby.compile.mode=OFF

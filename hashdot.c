@@ -45,12 +45,10 @@
 #include <mach-o/dyld.h>
 #include <dlfcn.h>
 #define LIB_PATH_VAR "DYLD_LIBRARY_PATH"
-#define JVM_LIB_NAME "/System/Library/Frameworks/JavaVM.framework/Libraries/libjvm.dylib"
 #define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM_Impl"
 #else
 #include <sys/prctl.h>
 #define LIB_PATH_VAR "LD_LIBRARY_PATH"
-#define JVM_LIB_NAME "libjvm.so"
 #define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM"
 #endif
 
@@ -69,17 +67,26 @@
 static apr_status_t
 parse_hashdot_header( const char *fname, 
                       apr_hash_t *props,
+                      apr_hash_t *rprops,
                       apr_pool_t *mp );
 
 static apr_status_t
 parse_profile( const char *pname, 
                apr_hash_t *props,
+               apr_hash_t *rprops,
                apr_pool_t *mp );
 
 static apr_status_t
 parse_line( char *line, 
-            apr_hash_t *props, 
+            apr_hash_t *props,
+            apr_hash_t *rprops, 
             apr_pool_t *mp );
+
+static apr_status_t
+expand_recursive_props( apr_hash_t *props,
+                        apr_hash_t *rprops, 
+                        apr_pool_t *mp );
+
 
 static void 
 print_error( apr_status_t rv, const char * info );
@@ -130,7 +137,8 @@ format_property_option( apr_pool_t *mp,
 typedef jint (*create_java_vm_f)(JavaVM **, JNIEnv **, JavaVMInitArgs *);
 
 static apr_status_t 
-get_create_jvm_function( apr_pool_t *mp, 
+get_create_jvm_function( apr_pool_t *mp,
+                         const char *lib_name,
                          create_java_vm_f *symbol );
 
 static char *
@@ -180,7 +188,7 @@ static int _debug = 0;
     fprintf( stderr, format , ## args); \
     fprintf( stderr, "\n" );
 
-int main( int argc, const char *argv[], const char *envp[] ) 
+int main( int argc, const char *argv[] ) 
 {
     apr_status_t rv = apr_initialize();
     if( rv != APR_SUCCESS ) {
@@ -219,12 +227,14 @@ int main( int argc, const char *argv[], const char *envp[] )
 
    
     apr_hash_t *props = NULL;
+    apr_hash_t *rprops = NULL;
     if( rv == APR_SUCCESS ) {
         props = apr_hash_make( mp );
+        rprops = apr_hash_make( mp );
     }
 
     if( rv == APR_SUCCESS ) {
-        rv = parse_profile( "default", props, mp );
+        rv = parse_profile( "default", props, rprops, mp );
     }
 
     if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
@@ -233,11 +243,11 @@ int main( int argc, const char *argv[], const char *envp[] )
 
     if( ( rv == APR_SUCCESS ) && 
         ( apr_env_get( &value, "HASHDOT_PROFILE", mp ) == APR_SUCCESS ) ) {
-        rv = parse_profile( value, props, mp );
+        rv = parse_profile( value, props, rprops, mp );
     }
 
     if( ( rv == APR_SUCCESS ) && ( called_as != NULL ) ) {
-        rv = parse_profile( called_as, props, mp );
+        rv = parse_profile( called_as, props, rprops, mp );
     }
 
     if( ( rv == APR_SUCCESS ) && ( called_as != NULL ) ) {
@@ -245,7 +255,12 @@ int main( int argc, const char *argv[], const char *envp[] )
     }
 
     if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
-        rv = parse_hashdot_header( argv[ file_offset ], props, mp );
+        rv = parse_hashdot_header( argv[ file_offset ], props, rprops, mp );
+    }
+    
+    // Late expand any "recursive" rprops and fold in to props
+    if( rv == APR_SUCCESS ) {
+        rv = expand_recursive_props( props, rprops, mp );
     }
     
     if( rv == APR_SUCCESS ) {
@@ -445,6 +460,7 @@ compact_option_flags( apr_array_header_t **values,
 static apr_status_t
 parse_profile( const char *pname, 
                apr_hash_t *props,
+               apr_hash_t *rprops,
                apr_pool_t *mp )
 {
     apr_status_t rv = APR_SUCCESS;
@@ -482,7 +498,7 @@ parse_profile( const char *pname,
         length = strlen( line );
 
         if( ( length > 0 ) && line[0] != '#' ) {
-            rv = parse_line( line, props, mp );
+            rv = parse_line( line, props, rprops, mp );
         }
     }
     
@@ -493,7 +509,8 @@ parse_profile( const char *pname,
 
 static apr_status_t
 parse_hashdot_header( const char *fname, 
-                      apr_hash_t *props, 
+                      apr_hash_t *props,
+                      apr_hash_t *rprops, 
                       apr_pool_t *mp )
 {
     apr_status_t rv = APR_SUCCESS;
@@ -529,7 +546,7 @@ parse_hashdot_header( const char *fname,
         if( ( length == 0 ) || line[0] != '#' ) break; 
         
         if( ( length > 2 ) && line[1] == '.' ) {
-            rv = parse_line( line + 2, props, mp );
+            rv = parse_line( line + 2, props, rprops, mp );
         }
     }
 
@@ -564,6 +581,7 @@ parse_hashdot_header( const char *fname,
 static apr_status_t
 parse_line( char *line, 
             apr_hash_t *props, 
+            apr_hash_t *rprops,
             apr_pool_t *mp )
 {
     static char * PARSE_LINE_ERRORS[] = {
@@ -600,7 +618,7 @@ parse_line( char *line,
             break;
 
         case ST_NAME:
-            if( IS_WS( *p ) || ( *p == '+' ) || ( *p == '=' ) ) {
+            if( IS_WS( *p ) || ( *p == '+' ) || ( *p == '=' ) || ( *p == ':' ) ) {
                 name = apr_pstrndup( mp, b, p - b );
                 state = ST_AFTER_NAME;
             }
@@ -627,6 +645,11 @@ parse_line( char *line,
                 }
                 state = ST_VALUES;
                 p++;
+            }
+            else if( ( *p == ':' ) && ( *(++p) == '=' ) ) {
+                apr_hash_set( rprops, apr_pstrdup( mp, name ), strlen( name ) + 1, 
+                              apr_pstrdup( mp, ++p ) );
+                return rv;
             }
             else { rv = 11; goto END_LOOP; }
             break;
@@ -761,7 +784,7 @@ parse_line( char *line,
         int i;
         for( i = 0; ( i < values->nelts ) && ( rv == APR_SUCCESS ); i++ ) {
             const char *value = ((const char **) values->elts )[i];
-            rv = parse_profile( value, props, mp );
+            rv = parse_profile( value, props, rprops, mp );
         }
 
         // As special case append now processed values to old values
@@ -784,6 +807,30 @@ parse_line( char *line,
 }
 
 
+static apr_status_t
+expand_recursive_props( apr_hash_t *props,
+                        apr_hash_t *rprops, 
+                        apr_pool_t *mp )
+{
+    apr_status_t rv = APR_SUCCESS;
+
+    const char *name = NULL;
+    const char *value = NULL;
+    apr_hash_index_t *p;
+    for( p = apr_hash_first( mp, rprops ); p; p = apr_hash_next( p ) ) {
+        
+        apr_hash_this( p, (const void **) &name, NULL, (void **) &value );
+        
+        char *line = apr_psprintf( mp, "%s=%s", name, value );
+        rv = parse_line( line, props, rprops, mp );
+
+        if( rv != APR_SUCCESS ) break;
+    }
+
+    return rv;
+}
+
+
 static void 
 print_error( apr_status_t rv, const char * info )
 {
@@ -800,6 +847,7 @@ init_jvm( apr_pool_t *mp,
           const char *argv[] )
 {
     static const char *CLASS_PATH_PROP = "java.class.path";
+    static const char *VM_LIB_PROP = "hashdot.vm.lib";
     static const char *VM_OPTIONS_PROP = "hashdot.vm.options";
     static const char *MAIN_PROP = "hashdot.main";
     static const char *ARGS_PRE_PROP = "hashdot.args.pre";
@@ -809,9 +857,22 @@ init_jvm( apr_pool_t *mp,
     apr_array_header_t *vals;
     int opt = 0;
 
+    vals = apr_hash_get( props, VM_LIB_PROP, 
+                         strlen( VM_LIB_PROP ) + 1 );
+
+    const char *lib_name = NULL;
+    if( vals && ( vals->nelts == 1 ) ) {
+        lib_name = ((const char **) vals->elts )[0];
+    }
+    else {
+        ERROR( "Need single value for property %s", VM_LIB_PROP );
+        rv = 1;
+    }
+
+
     create_java_vm_f create_jvm_func = NULL;
 
-    rv = get_create_jvm_function( mp, &create_jvm_func );
+    rv = get_create_jvm_function( mp, lib_name, &create_jvm_func );
     
     if( rv != APR_SUCCESS ) return rv;
 
@@ -1017,15 +1078,16 @@ format_property_option( apr_pool_t *mp,
 
 static apr_status_t 
 get_create_jvm_function( apr_pool_t *mp, 
+                         const char *lib_name,
                          create_java_vm_f *symbol )
 {
     apr_status_t rv = APR_SUCCESS;
 
     apr_dso_handle_t *lib;
-   
-    rv = apr_dso_load( &lib, JVM_LIB_NAME, mp ); // FIXME: UNIX-only
 
-    //FIXME: Any advantage to RTLD_GLOBAL|RTLD_NOW flags?
+    DEBUG( "Loading vm lib: %s", lib_name );
+   
+    rv = apr_dso_load( &lib, lib_name, mp );
 
     if( rv == APR_SUCCESS ) {
         rv = apr_dso_sym( (apr_dso_handle_sym_t *) symbol,
@@ -1085,12 +1147,12 @@ exec_self( apr_hash_t *props,
            const char *argv[],
            apr_pool_t *mp )
 {
-    static const char *CLASS_PATH_PROP = "hashdot.vm.libpath";
+    static const char *LIB_PATH_PROP = "hashdot.vm.libpath";
     apr_status_t rv = APR_SUCCESS;
 
     apr_array_header_t *dpaths = apr_hash_get( props, 
-                                               CLASS_PATH_PROP, 
-                                               strlen( CLASS_PATH_PROP ) + 1 );
+                                               LIB_PATH_PROP, 
+                                               strlen( LIB_PATH_PROP ) + 1 );
     if( dpaths == NULL ) return rv;
 
     char * ldpenv = NULL;
@@ -1148,7 +1210,8 @@ find_self_exe( const char **exe_name,
     uint32_t length = sizeof (buffer);
     if (_NSGetExecutablePath(buffer, &length) == 0 && buffer[0] == '/') {
         *exe_name = apr_pstrndup( mp, buffer, length );
-    } else {
+    } 
+    else {
         ERROR("failed to find exe: %s", strerror(errno));
         rv = APR_FROM_OS_ERROR( errno );
     }
@@ -1157,7 +1220,8 @@ find_self_exe( const char **exe_name,
     if( size < 0 ) {
         ERROR("readlink failed: %s", strerror(errno));
         rv = APR_FROM_OS_ERROR( errno );
-    } else {
+    } 
+    else {
         *exe_name = apr_pstrndup( mp, buffer, size );
     }
 #endif

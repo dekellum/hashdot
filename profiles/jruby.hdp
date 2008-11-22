@@ -1,7 +1,7 @@
 # HashDot launch profile for JRuby (http://jruby.codehaus.org/)
 #. hashdot.profile = jruby
 
-jruby.home    = /opt/dist/jruby-1.1.4
+jruby.home    = /opt/dist/jruby-1.1.5
 jruby.lib     = ${jruby.home}/lib
 jruby.script  = jruby
 jruby.shell   = /bin/sh
@@ -22,4 +22,13 @@ hashdot.parse_flags.value_args = -F -I -r
 
 # Give up looking for a script header with any of these
 hashdot.parse_flags.terminal = -C -e -S
+
+# RubyGems PATH/HOME
+# This moves gem home out of the jruby dist and thus avoid needing to
+# reinstall gems on upgrade.
+# hashdot.env.GEM_HOME = /opt/jruby/gems
+# hashdot.env.GEM_PATH = ${hashdot.env.GEM_HOME}
+
+# Disable native extensions
+# jruby.native.enabled = false
 

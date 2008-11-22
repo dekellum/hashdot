@@ -7,11 +7,11 @@ JAVA_HOME?=$(realpath $(dir $(shell which java))/..)
 APR_CONFIG=$(shell which apr-1-config)
 
 # Install hashdot binaries to specified directory
-INSTALL_BIN=/usr/local/bin
+INSTALL_BIN=/opt/bin
 
 # Where to install and find profiles (*.hdp) 
-# export PROFILE_DIR=./profiles to work from sandbox
-PROFILE_DIR?=/etc/hashdot/profiles
+# export PROFILE_DIR=./profiles to work in source directory
+PROFILE_DIR?=/opt/hashdot/profiles
 
 VERSION=1.2
 
@@ -28,15 +28,14 @@ LDLIBS=$(shell ${APR_CONFIG} --libs --link-ld)
 all: hashdot
 
 # Note: You might want to install different symlinks below. These offer
-# convient shortcuts to same-named profiles.
+# convenient shortcuts to same-named profiles.
 
 install: hashdot
 	install -d $(PROFILE_DIR)
 	install -m 644 profiles/*.hdp $(PROFILE_DIR)
 	install -m 755 hashdot $(INSTALL_BIN)
 	cd $(INSTALL_BIN) && test -e jruby || ln -s hashdot jruby
-
-# cd $(INSTALL_BIN) && test -e jruby-shortlived || ln -s hashdot jruby-shortlived
+	cd $(INSTALL_BIN) && test -e jruby-shortlived || ln -s hashdot jruby-shortlived
 
 dist: hashdot
 	mkdir hashdot-$(VERSION)
@@ -46,14 +45,17 @@ dist: hashdot
 	tar --exclude '.svn' --exclude '*~' -zcvf hashdot-$(VERSION)-src.tar.gz hashdot-$(VERSION)
 	rm -rf hashdot-$(VERSION)
 
-test: hashdot
+jruby: hashdot
+	ln -s hashdot jruby
+
+test: hashdot jruby
 	test/error/error_tests.sh
-	test/hello.rb
 	test/list_libs 
 	test/cmdline param1 param2
 	test/test_props.rb 
 	test/test_env.rb
 	test/test_chdir.rb
+	examples/hello.rb
 
 clean: 
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM

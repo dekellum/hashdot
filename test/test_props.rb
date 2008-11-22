@@ -35,6 +35,10 @@
 #
 ## glob test
 #. java.class.path += test/test_prop*.rb 
+#
+## recursive/delayed (:=) prop test
+#. rprop := first ${cprop}
+#. cprop = second
 
 require 'java'
 require 'test/unit'
@@ -72,6 +76,10 @@ class TestProperties < Test::Unit::TestCase
     assert_prop( "vc5", "value=5" )
     assert_prop( "vc6", "value+6 +=value7 value=8")
     assert_prop( "vc7", "value = 7" )
+  end
+
+  def test_recursive_prop
+    assert_prop( "rprop", "first second" )
   end
 
   def test_hashdot_script
