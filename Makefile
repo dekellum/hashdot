@@ -1,4 +1,3 @@
-
 # JDK used for compiling, a different one can be set at runtime,
 # see profiles/default.hdp
 JAVA_HOME?=$(realpath $(dir $(shell which java))/..)
@@ -27,24 +26,24 @@ LDLIBS=$(shell ${APR_CONFIG} --libs --link-ld)
 
 all: hashdot
 
-# Note: You might want to install different symlinks below. These offer
+# Install to INSTALL_BIN and PROFILE_DIR
+# Note: You might want to install different symlinks. These offer
 # convenient shortcuts to same-named profiles.
-
 install: hashdot
 	install -d $(PROFILE_DIR)
 	install -m 644 profiles/*.hdp $(PROFILE_DIR)
+	install -d $(INSTALL_BIN)
 	install -m 755 hashdot $(INSTALL_BIN)
 	cd $(INSTALL_BIN) && test -e jruby || ln -s hashdot jruby
 	cd $(INSTALL_BIN) && test -e jruby-shortlived || ln -s hashdot jruby-shortlived
 
 dist: hashdot
 	mkdir hashdot-$(VERSION)
-	cp -a INSTALL Makefile hashdot.c profiles test hashdot-$(VERSION)
-	mkdir hashdot-$(VERSION)/doc
-	cp -a doc/COPYING doc/index.html doc/NOTICE doc/reference.html doc/style.css hashdot-$(VERSION)/doc
+	cp -a INSTALL Makefile hashdot.c profiles test doc examples hashdot-$(VERSION)
 	tar --exclude '.svn' --exclude '*~' -zcvf hashdot-$(VERSION)-src.tar.gz hashdot-$(VERSION)
 	rm -rf hashdot-$(VERSION)
 
+# jruby symlink used in some tests
 jruby: hashdot
 	ln -s hashdot jruby
 
