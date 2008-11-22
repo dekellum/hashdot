@@ -16,7 +16,7 @@ class TestCmdLine < Test::Unit::TestCase
   def test_ps_command_line
     args = `ps -o command -p #{Process.pid}`.split
     args.shift
-    assert_equal( [ 'jruby', $0 ] + ARGV_ORIG, args )
+    assert_equal( [ './jruby', $0 ] + ARGV_ORIG, args )
   end
 
   def test_ps_short_command
