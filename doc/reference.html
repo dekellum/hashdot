@@ -126,6 +126,17 @@ property.name = value
 ==>           a b c d
 </pre>
 
+<p>Delayed/recursive reference expansion:</p>
+
+<pre>#. rprop := first ${cprop}
+#. cprop  = second
+ = rprop => first second
+</pre>
+
+<p>In the above example rprop is expanded at the end of reading all
+profiles and thus the final value of cprop is used. Thus is useful for
+allowing overrides in script headers or later profiles.</p>
+
 <h2><a name="load_order">Load Order</a></h2>
 
 <p>Properties are read from profiles and the script header in the
@@ -147,6 +158,10 @@ following order.</p>
 referenced.  Currently profiles may be referenced and thus read more
 than once. Profile authors must exercise care to avoid circular
 references.</p>
+
+<p>Property values set with (=) or (+=) are expanded when first
+encountered.  Property values set with (:=) are expanded only after
+all profiles and any script header have been read.</p>
 
 <h2><a name="special">Special Properties</a></h2>
 
@@ -178,10 +193,18 @@ format. Example:</p>
 <p>Note that CLASSPATH environment variable is ignored, as use of
 environment variables for normal operation of scripts discouraged.</p>
 
+<h3><a name="hashdot.vm.lib">hashdot.vm.libpath</a></h3>
+
+<p>The dynamic library to load for the JVM. Typically this is set to
+an absolute path, which includes selection of the client or server
+VM. See the profiles/default.hdp for configuration details.</p>
+
 <h3><a name="hashdot.vm.libpath">hashdot.vm.libpath</a></h3>
 
-<p>All path values are prepended to LD_LIBRARY_PATH in order to load
-Java libjvm.so and its dependencies.</p>
+<p>All path values are prepended to LD_LIBRARY_PATH (Linux) or
+DYLD_LIBRARY_PATH (Mac OS X) before loading the JVM. Note the use of
+this approach to the JVM libraries is deprecated in favor of using
+an absolute path specified by hashdot.vm.lib.</p>
 
 <h3><a name="hashdot.vm.options">hashdot.vm.options</a></h3>
 

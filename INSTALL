@@ -25,5 +25,5 @@ Instructions:
 % make install
 
 4. Configure installed profiles to suite your environment. In
-   particular, see default.hdp for runtime hashdot.vm.home, etc.
+   particular, see default.hdp for runtime hashdot.vm.lib, etc.
 
