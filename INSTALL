@@ -2,8 +2,6 @@
 
 Note: This needs some work, in particular use of autoconf, etc.
 
-Instructions:
-
 1. Install build dependencies:
 
    * GNU make (3.81+)
@@ -13,17 +11,50 @@ Instructions:
    
 2. Edit Makefile
 
-   * Change JAVA_HOME to installed JDK
-   * Change INSTALL_BIN to desired location of hashdot binary and symlinks
-   * Change PROFILE_DIR to desired locaiton of hashdot profiles
-     (i.e. /etc/hashdot/profiles)
-   * (Optional) Change set of hashdot symlinks as desired for install.
+   a. Change JAVA_HOME to installed JDK to use for compiling.
 
-3. Build and install
+      Defaultst to JAVA_HOME environment variable or based on java in
+      PATH.  Note the runtime JDK is configured separately in
+      profiles/default.hdp (hashdot.vm.home)
 
-% make
-% make install
+   b. Change PROFILE_DIR to desired location of hashdot profiles. 
 
-4. Configure installed profiles to suite your environment. In
-   particular, see default.hdp for runtime hashdot.vm.lib, etc.
+      Default: /opt/hashdot/profiles or environement variable.
 
+      For testing, set PROFILE_DIR environment variable to
+      "./profiles" (source directory). Set the PROFILE_DIR to its
+      final location and rebuild before installing (see below.)
+      
+   c. Change INSTALL_BIN to desired install location of hashdot
+      binaries.
+
+      Default: /opt/bin
+
+   d. (Optional) Change set of hashdot symlinks desired for install.
+
+3. Edit ./profiles/*
+
+   Edit profiles before installation and to get "make test" working
+   with PROFILE_DIR=./profiles (see above.)
+
+   a. Edit JVM settings in ./profiles/default.hdp 
+
+      Note hashdot.vm.arch and hashdot.vm.lib settings for specific
+      platforms.
+
+   b. Edit jruby.hdp to point to your jruby installation.
+
+      JRuby is required for running the tests via "make test"
+ 
+4. Build and test
+   
+   Build with local profiles directory for testing prior to install:
+   
+   % PROFILE_DIR=./profiles make test
+
+5. Install
+
+   Rebuild with final PROFILE_DIR and install:
+
+   % unset PROFILE_DIR 
+   % make clean install
