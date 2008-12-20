@@ -13,13 +13,13 @@ Note: This needs some work, in particular use of autoconf, etc.
 
    a. Change JAVA_HOME to installed JDK to use for compiling.
 
-      Defaultst to JAVA_HOME environment variable or based on java in
+      Defaults to JAVA_HOME environment variable or based on java in
       PATH.  Note the runtime JDK is configured separately in
       profiles/default.hdp (hashdot.vm.home)
 
    b. Change PROFILE_DIR to desired location of hashdot profiles. 
 
-      Default: /opt/hashdot/profiles or environement variable.
+      Default: /opt/hashdot/profiles or environment variable.
 
       For testing, set PROFILE_DIR environment variable to
       "./profiles" (source directory). Set the PROFILE_DIR to its
