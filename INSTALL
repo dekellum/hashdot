@@ -52,6 +52,11 @@ Note: This needs some work, in particular use of autoconf, etc.
    
    % PROFILE_DIR=./profiles make test
 
+   Note: On Mac OS X, the final test/test_cmdline.rb currently fails
+   due to lack of a suitable equivalent to the Linux prctl() for
+   process rename.  However, this is not strictly required for useful
+   operation.
+
 5. Install
 
    Rebuild with final PROFILE_DIR and install:
