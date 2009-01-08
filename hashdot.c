@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pwd.h>
 
 #if defined(__APPLE__) && ( defined(__MACH__) || defined(__DARWIN__) ) && !defined(__MacOS_X__)
 #define __MacOS_X__ 1
@@ -103,6 +104,10 @@ compact_option_flags( apr_array_header_t **values,
 static apr_status_t
 set_version_prop( apr_hash_t *props, 
                   apr_pool_t *mp );
+
+static apr_status_t
+set_user_prop( apr_hash_t *props, 
+               apr_pool_t *mp );
 
 
 static apr_status_t
@@ -234,6 +239,10 @@ int main( int argc, const char *argv[] )
     }
 
     if( rv == APR_SUCCESS ) {
+        rv = set_user_prop( props, mp );
+    }
+
+    if( rv == APR_SUCCESS ) {
         rv = parse_profile( "default", props, rprops, mp );
     }
 
@@ -289,7 +298,7 @@ int main( int argc, const char *argv[] )
     if( rv == APR_SUCCESS ) {
         rv = set_version_prop( props, mp );
     }
-    
+
     if( rv == APR_SUCCESS ) {
         rv = check_hashdot_cwd( props, 
                                 (file_offset > 0) ? argv + file_offset : NULL, 
@@ -331,6 +340,24 @@ set_version_prop( apr_hash_t *props,
 
     return APR_SUCCESS;
 }
+
+static apr_status_t
+set_user_prop( apr_hash_t *props, 
+                  apr_pool_t *mp )
+{
+    static const char *NAME = "hashdot.user.home";
+
+    struct passwd *pentry = getpwuid( getuid() );
+
+    apr_array_header_t *value = apr_array_make( mp, 1, sizeof( const char* ) );
+    *( (const char **) apr_array_push( value ) ) = 
+        apr_pstrdup( mp, pentry->pw_dir );
+
+    apr_hash_set( props, apr_pstrdup( mp, NAME ), strlen( NAME ) + 1, value );
+
+    return APR_SUCCESS;
+}
+
 
 static apr_status_t
 set_script_prop( const char *sname,
