@@ -17,7 +17,12 @@ Note: This needs some work, in particular use of autoconf, etc.
       PATH.  Note the runtime JDK is configured separately in
       profiles/default.hdp (hashdot.vm.home)
 
-   b. Change PROFILE_DIR to desired location of hashdot profiles. 
+   b. Override default environment (-m64|-m32) via CFLAGS if needed
+
+      For example, Mac OS X gcc default to -m32, so change it to -m64
+      to use a 64-bit JVM.
+
+   c. Change PROFILE_DIR to desired location of hashdot profiles. 
 
       Default: /opt/hashdot/profiles or environment variable.
 
@@ -25,12 +30,12 @@ Note: This needs some work, in particular use of autoconf, etc.
       "./profiles" (source directory). Set the PROFILE_DIR to its
       final location and rebuild before installing (see below.)
       
-   c. Change INSTALL_BIN to desired install location of hashdot
+   d. Change INSTALL_BIN to desired install location of hashdot
       binaries.
 
       Default: /opt/bin
 
-   d. (Optional) Change set of hashdot symlinks desired for install.
+   e. (Optional) Change set of hashdot symlinks desired for install.
 
 3. Edit ./profiles/*
 
@@ -40,7 +45,9 @@ Note: This needs some work, in particular use of autoconf, etc.
    a. Edit JVM settings in ./profiles/default.hdp 
 
       Note hashdot.vm.arch and hashdot.vm.lib settings for specific
-      platforms.
+      platforms.  On Mac OS X, you can use either a "default" system
+      JVM or a specific JVM version.  Hashdot must be built for the
+      same arch as the JVM (32/64).  See 2b above.
 
    b. Edit jruby.hdp to point to your jruby installation.
 

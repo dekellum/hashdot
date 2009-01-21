@@ -7,7 +7,8 @@
 # JVM install directory
 # Linux:
 hashdot.vm.home = /opt/dist/jdk_sun_1.6.0_10_x32
-# Mac: hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework
+# Mac (default JVM): hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework
+# Mac (version JVM): hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0
 
 # For Linux: amd64, i386, etc.
 # Unused on Mac OS X

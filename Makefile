@@ -21,6 +21,9 @@ CFLAGS=$(shell ${APR_CONFIG} --cflags --cppflags --includes) -O2 -Wall -fno-stri
 -DHASHDOT_PROFILE_DIR=\"${PROFILE_DIR}\" \
 -DHASHDOT_VERSION=\"${VERSION}\"
 
+# Override platform default (i.e. Mac defaults x32)
+# CFLAGS += -m64
+
 LDFLAGS=$(shell ${APR_CONFIG} --ldflags)
 LDLIBS=$(shell ${APR_CONFIG} --libs --link-ld)
 
