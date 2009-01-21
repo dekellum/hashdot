@@ -21,7 +21,7 @@ class TestEnv < Test::Unit::TestCase
   end
 
   def test_child
-    assert_equal( `sh -c 'echo -n $HVAR_1'`, "value" )
+    assert_equal( `sh -c 'echo $HVAR_1'`.strip, "value" )
   end
 
   def assert_prop( name, value )
