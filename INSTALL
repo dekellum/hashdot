@@ -6,7 +6,7 @@ Note: This needs some work, in particular use of autoconf, etc.
 
    * GNU make (3.81+)
    * gcc (4.1.2+)
-   * Apache Portable Runtime: apr, apr-devel (1.2.11+) 
+   * Apache Portable Runtime: apr, apr-devel (1.2.7+) 
    * Java JDK 
    
 2. Edit Makefile
@@ -19,7 +19,7 @@ Note: This needs some work, in particular use of autoconf, etc.
 
    b. Override default environment (-m64|-m32) via CFLAGS if needed
 
-      For example, Mac OS X gcc default to -m32, so change it to -m64
+      For example, Mac OS X gcc defaults to -m32, so change it to -m64
       to use a 64-bit JVM.
 
    c. Change PROFILE_DIR to desired location of hashdot profiles. 
