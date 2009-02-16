@@ -1,0 +1,5 @@
+hashdot
+hashdot-*.tar.gz
+jruby
+hashdot.dSYM
+test/daemon.log
