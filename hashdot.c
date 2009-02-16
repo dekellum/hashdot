@@ -88,7 +88,6 @@ expand_recursive_props( apr_hash_t *props,
                         apr_hash_t *rprops, 
                         apr_pool_t *mp );
 
-
 static void 
 print_error( apr_status_t rv, const char * info );
 
@@ -102,19 +101,8 @@ compact_option_flags( apr_array_header_t **values,
                       apr_pool_t *mp );
 
 static apr_status_t
-set_version_prop( apr_hash_t *props, 
-                  apr_pool_t *mp );
-
-static apr_status_t
 set_user_prop( apr_hash_t *props, 
                apr_pool_t *mp );
-
-
-static apr_status_t
-set_script_prop( const char *sname,
-                 apr_hash_t *props, 
-                 apr_pool_t *mp );
-
 
 static apr_status_t
 check_hashdot_cwd( apr_hash_t *props, 
@@ -133,11 +121,11 @@ init_jvm( apr_pool_t *mp,
           int argc, 
           const char *argv[] );
 
-static apr_status_t
-format_property_option( apr_pool_t *mp,
-                        const char *name,
-                        apr_array_header_t *vals,
-                        char **option );
+static char *
+property_to_option( apr_pool_t *mp,
+                    const char *name,
+                    apr_array_header_t *vals,
+                    char separator );
 
 typedef jint (*create_java_vm_f)(JavaVM **, JNIEnv **, JavaVMInitArgs *);
 
@@ -174,6 +162,29 @@ skip_flags( apr_hash_t *props,
             int argc,
             const char *argv[],
             int *file_offset );
+
+static apr_array_header_t *
+get_property_array( apr_hash_t *props, 
+                    const char *name );
+
+static apr_status_t
+get_property_value( apr_pool_t *mp,
+                    apr_hash_t *props,
+                    const char *name,
+                    char separator,
+                    int required,
+                    const char **value );
+
+static void
+set_property_array( apr_hash_t *props, 
+                    const char *name,
+                    apr_array_header_t *vals );
+
+static apr_status_t
+set_property_value( apr_pool_t *mp,
+                    apr_hash_t *props,
+                    const char *name, 
+                    const char * value );
 
 static apr_status_t install_hup_handler();
 
@@ -247,7 +258,7 @@ int main( int argc, const char *argv[] )
     }
 
     if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
-        rv = set_script_prop( argv[ file_offset ], props, mp );
+        set_property_value( mp, props, "hashdot.script", argv[ file_offset ] );
     }
 
     if( ( rv == APR_SUCCESS ) && 
@@ -296,7 +307,7 @@ int main( int argc, const char *argv[] )
     }
         
     if( rv == APR_SUCCESS ) {
-        rv = set_version_prop( props, mp );
+        set_property_value( mp, props, "hashdot.version", HASHDOT_VERSION );
     }
 
     if( rv == APR_SUCCESS ) {
@@ -327,53 +338,12 @@ int main( int argc, const char *argv[] )
 }
 
 static apr_status_t
-set_version_prop( apr_hash_t *props, 
-                  apr_pool_t *mp )
-{
-    static const char *NAME = "hashdot.version";
-
-    apr_array_header_t *value = apr_array_make( mp, 1, sizeof( const char* ) );
-    *( (const char **) apr_array_push( value ) ) = 
-        apr_pstrdup( mp, HASHDOT_VERSION );
-
-    apr_hash_set( props, apr_pstrdup( mp, NAME ), strlen( NAME ) + 1, value );
-
-    return APR_SUCCESS;
-}
-
-static apr_status_t
 set_user_prop( apr_hash_t *props, 
-                  apr_pool_t *mp )
+               apr_pool_t *mp )
 {
-    static const char *NAME = "hashdot.user.home";
-
     struct passwd *pentry = getpwuid( getuid() );
-
-    apr_array_header_t *value = apr_array_make( mp, 1, sizeof( const char* ) );
-    *( (const char **) apr_array_push( value ) ) = 
-        apr_pstrdup( mp, pentry->pw_dir );
-
-    apr_hash_set( props, apr_pstrdup( mp, NAME ), strlen( NAME ) + 1, value );
-
-    return APR_SUCCESS;
+    return set_property_value( mp, props, "hashdot.user.home", pentry->pw_dir );
 }
-
-
-static apr_status_t
-set_script_prop( const char *sname,
-                 apr_hash_t *props, 
-                 apr_pool_t *mp )
-{
-    static const char *NAME = "hashdot.script";
-
-    apr_array_header_t *value = apr_array_make( mp, 1, sizeof( const char* ) );
-    *( (const char **) apr_array_push( value ) ) = apr_pstrdup( mp, sname );
-
-    apr_hash_set( props, apr_pstrdup( mp, NAME ), strlen( NAME ) + 1, value );
-
-    return APR_SUCCESS;
-}
-
 
 static apr_status_t
 glob_values( apr_pool_t *mp, 
@@ -483,7 +453,6 @@ compact_option_flags( apr_array_header_t **values,
 }
 
 
-
 static apr_status_t
 parse_profile( const char *pname, 
                apr_hash_t *props,
@@ -544,6 +513,8 @@ parse_hashdot_header( const char *fname,
     apr_file_t *in = NULL;
     char line[4096];
     apr_size_t length;
+
+
 
     DEBUG( "Parsing hashdot header from %s", fname );
 
@@ -665,7 +636,7 @@ parse_line( char *line,
                 // "hashdot.profile" in which case it will be appended
                 // (for both += and =) below.
                 if( strcmp( name, "hashdot.profile" ) != 0 ) {
-                    values = apr_hash_get( props, name, strlen( name ) + 1 );
+                    values = get_property_array( props, name );
                 }
                 if( values == NULL ) {
                     values = apr_array_make( mp, 16, sizeof( const char* ) );
@@ -754,8 +725,7 @@ parse_line( char *line,
         case ST_VALUE_VAR:
             if( *p == '}' ) {
                 char * vname = apr_pstrndup( mp, b, p - b );
-                apr_array_header_t *vals = 
-                    apr_hash_get( props, vname, strlen( vname ) + 1 );
+                apr_array_header_t *vals = get_property_array( props, vname );
                 if( !vals ) {
                     ERROR( "Unknown property ${%s}.\n", vname );
                     rv = 21;
@@ -816,8 +786,7 @@ parse_line( char *line,
 
         // As special case append now processed values to old values
         // (implicit append).
-        apr_array_header_t *old_vals = 
-            apr_hash_get( props, name, strlen( name ) + 1 );
+        apr_array_header_t *old_vals = get_property_array( props, name );
         if( old_vals != NULL ) {
             apr_array_cat( old_vals, values );
             values = old_vals;
@@ -825,8 +794,7 @@ parse_line( char *line,
     }
 
     if( ( name != NULL ) && ( rv == APR_SUCCESS ) ) {
-        apr_hash_set( props, apr_pstrdup( mp, name ), 
-                      strlen( name ) + 1, values );
+        set_property_array( props, apr_pstrdup( mp, name ), values );
         DEBUG( "Set %s = %s", name, apr_array_pstrcat( mp, values, ' ' ) );
     }
 
@@ -873,29 +841,13 @@ init_jvm( apr_pool_t *mp,
           int argc, 
           const char *argv[] )
 {
-    static const char *CLASS_PATH_PROP = "java.class.path";
-    static const char *VM_LIB_PROP = "hashdot.vm.lib";
-    static const char *VM_OPTIONS_PROP = "hashdot.vm.options";
-    static const char *MAIN_PROP = "hashdot.main";
-    static const char *ARGS_PRE_PROP = "hashdot.args.pre";
-    
     apr_status_t rv = APR_SUCCESS;
     JavaVMInitArgs vm_args;
     apr_array_header_t *vals;
     int opt = 0;
 
-    vals = apr_hash_get( props, VM_LIB_PROP, 
-                         strlen( VM_LIB_PROP ) + 1 );
-
     const char *lib_name = NULL;
-    if( vals && ( vals->nelts == 1 ) ) {
-        lib_name = ((const char **) vals->elts )[0];
-    }
-    else {
-        ERROR( "Need single value for property %s", VM_LIB_PROP );
-        rv = 1;
-    }
-
+    rv = get_property_value( mp, props, "hashdot.vm.lib", 0, 1, &lib_name );
 
     create_java_vm_f create_jvm_func = NULL;
 
@@ -905,13 +857,12 @@ init_jvm( apr_pool_t *mp,
 
     int options_len = apr_hash_count( props );
     
-    vals = apr_hash_get( props, VM_OPTIONS_PROP, 
-                         strlen( VM_OPTIONS_PROP ) + 1 );
+    vals = get_property_array( props, "hashdot.vm.options" );
     
     if( vals ) {
         rv = compact_option_flags( &vals, mp );
-        apr_hash_set( props, VM_OPTIONS_PROP, strlen( VM_OPTIONS_PROP ) + 1, 
-                      vals );
+        set_property_array( props, "hashdot.vm.options", vals );
+
         if( rv != APR_SUCCESS) return rv;
         options_len += vals->nelts;
     }
@@ -928,27 +879,27 @@ init_jvm( apr_pool_t *mp,
     }
 
     // Add java.class.path first (required by JVM)
-    
-    vals = apr_hash_get( props, CLASS_PATH_PROP, 
-                         strlen( CLASS_PATH_PROP ) + 1 );
+    vals = get_property_array( props, "java.class.path" );
     if( vals ) {
-        rv = format_property_option( mp, CLASS_PATH_PROP, vals, 
-                                     &( options[opt].optionString ) );
-        options[opt++].extraInfo = NULL;
+        apr_array_header_t *tvals = NULL;
+        rv = glob_values( mp, vals, &tvals );
+        if( rv == APR_SUCCESS ) {
+            options[opt].optionString = 
+                property_to_option( mp, "java.class.path", tvals, ':' );
+            options[opt++].extraInfo = NULL;
+        }
     }
 
     if( rv != APR_SUCCESS ) return rv;
 
     // Add all other properties.
-
     const char *name = NULL;
     apr_hash_index_t *p;
     for( p = apr_hash_first( mp, props ); p; p = apr_hash_next( p ) ) {
-        
         apr_hash_this( p, (const void **) &name, NULL, (void **) &vals );
         if( strcmp( name, "java.class.path" ) != 0 ) {
-            rv = format_property_option( mp, name, vals, 
-                                         &( options[opt].optionString ) );
+            options[opt].optionString = 
+                property_to_option( mp, name, vals, ' ' );
             options[opt++].extraInfo = NULL;
         }
         if( rv != APR_SUCCESS ) break;
@@ -970,15 +921,9 @@ init_jvm( apr_pool_t *mp,
         rv = install_hup_handler();
     }
 
-    vals = apr_hash_get( props, MAIN_PROP, strlen( MAIN_PROP ) + 1 );
     const char *main_name = NULL;
-    if( vals && ( vals->nelts == 1 ) ) {
-        main_name = convert_class_name( mp, ((const char **) vals->elts )[0] );
-    }
-    else {
-        ERROR( "Need single value for property %s", MAIN_PROP );
-        rv = 1;
-    }
+    rv = get_property_value( mp, props, "hashdot.main", 0, 1, &main_name );
+    main_name = convert_class_name( mp, main_name );
 
     jclass cls = NULL;
     if( rv == APR_SUCCESS ) {
@@ -1011,8 +956,7 @@ init_jvm( apr_pool_t *mp,
     
     jobjectArray args = NULL;
     if( rv == APR_SUCCESS ) {
-        vals = apr_hash_get( props, ARGS_PRE_PROP, 
-                             strlen( ARGS_PRE_PROP ) + 1 );
+        vals = get_property_array( props, "hashdot.args.pre" );
 
         jsize args_total = argc;
         int argp = 0;    
@@ -1076,32 +1020,72 @@ init_jvm( apr_pool_t *mp,
     return rv;
 }
 
+static apr_array_header_t *
+get_property_array( apr_hash_t *props, const char *name )
+{
+    return apr_hash_get( props, name, strlen( name ) + 1 );
+}
+
 static apr_status_t
-format_property_option( apr_pool_t *mp,
-                        const char *name,
-                        apr_array_header_t *vals,
-                        char **option )
+get_property_value( apr_pool_t *mp,
+                    apr_hash_t *props,
+                    const char *name,
+                    char separator,
+                    int required,
+                    const char **value )
 {
     apr_status_t rv = APR_SUCCESS;
-
-    const char * cval = NULL;
-    if( strcmp( name, "java.class.path" ) == 0 ) {
-        apr_array_header_t *tvals = NULL;
-        rv = glob_values( mp, vals, &tvals );
-        if( rv == APR_SUCCESS ) {
-            cval = apr_array_pstrcat( mp, tvals, ':' );
+    apr_array_header_t *vals = get_property_array( props, name );
+    if( vals != NULL ) {
+        if( vals->nelts == 1 ) {
+            *value = ( (const char **) vals->elts )[0];
+        }
+        else if( ( vals->nelts > 1 ) && ( separator != 0 ) ) {
+            *value = apr_array_pstrcat( mp, vals, separator );
+        }
+        else {
+            ERROR( "Need single value for property %s", name );
+            rv = 1;
         }
     }
-    else {
-        cval = apr_array_pstrcat( mp, vals, ' ' );
-    }
-
-    if( rv == APR_SUCCESS ) {
-        *option = apr_psprintf( mp, "-D%s=%s", name, cval );
-        DEBUG( "Java System Property: %s", *option );
+    else if( required ) {
+        ERROR( "Required property %s not set.", name );
+        rv = 1;
     }
     return rv;
 }
+
+static void
+set_property_array( apr_hash_t *props, 
+                    const char *name,
+                    apr_array_header_t *vals )
+{
+    apr_hash_set( props, name, strlen( name ) + 1, vals );
+}
+
+static apr_status_t
+set_property_value( apr_pool_t *mp,
+                    apr_hash_t *props,
+                    const char *name, 
+                    const char * value )
+{
+    apr_status_t rv = APR_SUCCESS;
+    apr_array_header_t *vals = apr_array_make( mp, 1, sizeof( const char* ) );
+    *( (const char **) apr_array_push( vals ) ) = apr_pstrdup( mp, value );
+    set_property_array( props, name, vals );
+    return rv;
+}
+
+static char *
+property_to_option( apr_pool_t *mp,
+                    const char *name,
+                    apr_array_header_t *vals,
+                    char separator )
+{
+    return apr_psprintf( mp, "-D%s=%s", 
+                         name, apr_array_pstrcat( mp, vals, separator ) );
+}
+
 
 static apr_status_t 
 get_create_jvm_function( apr_pool_t *mp, 
@@ -1174,12 +1158,10 @@ exec_self( apr_hash_t *props,
            const char *argv[],
            apr_pool_t *mp )
 {
-    static const char *LIB_PATH_PROP = "hashdot.vm.libpath";
     apr_status_t rv = APR_SUCCESS;
+    apr_array_header_t *dpaths = 
+        get_property_array( props, "hashdot.vm.libpath" );
 
-    apr_array_header_t *dpaths = apr_hash_get( props, 
-                                               LIB_PATH_PROP, 
-                                               strlen( LIB_PATH_PROP ) + 1 );
     if( dpaths == NULL ) return rv;
 
     char * ldpenv = NULL;
@@ -1281,18 +1263,12 @@ skip_flags( apr_hash_t *props,
             int *file_offset )
 {
     apr_status_t rv = APR_SUCCESS;
-    static const char *VALUE_ARGS_PROP = "hashdot.parse_flags.value_args";
-    static const char *TERMINAL_PROP   = "hashdot.parse_flags.terminal";
 
     apr_array_header_t *ignore_flags = 
-        apr_hash_get( props, 
-                      VALUE_ARGS_PROP, 
-                      strlen( VALUE_ARGS_PROP ) + 1 );
+        get_property_array( props, "hashdot.parse_flags.value_args" );
 
     apr_array_header_t *terminal_flags = 
-        apr_hash_get( props, 
-                      TERMINAL_PROP, 
-                      strlen( TERMINAL_PROP ) + 1 );
+        get_property_array( props, "hashdot.parse_flags.terminal" );
 
     int i;
     for( i = 1; i < argc; i++ ) {
@@ -1335,20 +1311,19 @@ check_hashdot_cwd( apr_hash_t *props,
                    apr_pool_t *mp )
 {
     apr_status_t rv = APR_SUCCESS;
-    static const char *CHDIR_PROP  = "hashdot.chdir";
 
-    apr_array_header_t *vals = NULL;
     char * nwd = NULL;
 
-    vals = apr_hash_get( props, CHDIR_PROP, strlen( CHDIR_PROP ) + 1 );
-    if( vals != NULL ) {
-        const char * rel_wd = apr_array_pstrcat( mp, vals, '/' );
+    const char * rel_wd = NULL;
+    rv = get_property_value( mp, props, "hashdot.chdir", '/', 0, &rel_wd );
+    if( ( rv == APR_SUCCESS ) && ( rel_wd != NULL ) ) {
         rv = apr_filepath_merge( &nwd, NULL, rel_wd, 0, mp );
     }
+
     if( ( rv == APR_SUCCESS ) && ( nwd != NULL ) ) {
         char * cwd = NULL;
         rv = apr_filepath_get( &cwd, 0, mp );
-        if( ( rv == APR_SUCCESS ) &&  ( strcmp( cwd, nwd ) != 0 ) ) {
+        if( ( rv == APR_SUCCESS ) && ( strcmp( cwd, nwd ) != 0 ) ) {
             
             // Convert to absolute script path if provided.
             if( script != NULL ) {
@@ -1375,22 +1350,12 @@ check_daemonize( apr_hash_t *props,
 {
     apr_status_t rv = APR_SUCCESS;
 
-    static const char *DAEMONIZE_PROP  = "hashdot.daemonize";
-    static const char *IOR_FILE_PROP   = "hashdot.io_redirect.file";
-    static const char *IOR_APPEND_PROP = "hashdot.io_redirect.append";
+    const char * flag = NULL;
+    rv = get_property_value( mp, props, "hashdot.daemonize", 0, 0, &flag );
 
-    apr_array_header_t *vals = NULL;
-    const char * val = NULL;
-
-    vals = apr_hash_get( props, 
-                         DAEMONIZE_PROP, 
-                         strlen( DAEMONIZE_PROP ) + 1 );
-
-    if( vals != NULL ) {
-        val = apr_array_pstrcat( mp, vals, ':' );
-    }
     int daemon = 0;
-    if( ( val != NULL ) && ( strcmp( val, "false" ) != 0 ) ) {
+    if( ( rv == APR_SUCCESS ) && ( flag != NULL ) && 
+        ( strcmp( flag, "false" ) != 0 ) ) {
 
         DEBUG( "Forking daemon." );
 
@@ -1411,20 +1376,15 @@ check_daemonize( apr_hash_t *props,
     }
 
     if( rv == APR_SUCCESS ) {
-        vals = apr_hash_get( props, IOR_FILE_PROP, 
-                             strlen( IOR_FILE_PROP ) + 1 );
         const char *fname = NULL;
-        if( vals != NULL ) {
-            fname = apr_array_pstrcat( mp, vals, '/' );
-        }
+        rv = get_property_value( mp, props, "hashdot.io_redirect.file", '/', 0, 
+                                 &fname );
         if( ( fname != NULL ) ) {
-            vals = apr_hash_get( props, IOR_APPEND_PROP, 
-                                 strlen( IOR_APPEND_PROP ) + 1 );
+            flag = NULL;
+            rv = get_property_value( mp, props, "hashdot.io_redirect.append", 
+                                     0, 0, &flag );
             int append = 1;    
-            if( vals != NULL ) {
-                val = apr_array_pstrcat( mp, vals, ':' );
-            }
-            if( ( val != NULL ) && ( strcmp( val, "false" ) == 0 ) ) {
+            if( ( flag != NULL ) && ( strcmp( flag, "false" ) == 0 ) ) {
                 append = 0;
             }
 
