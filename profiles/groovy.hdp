@@ -1,11 +1,12 @@
 # HashDot launch profile for Groovy (http://groovy.codehaus.org/)
 #. hashdot.profile = groovy
 
-groovy.home       = /opt/dist/groovy-1.5.6
+groovy.home       = /opt/dist/groovy-1.5.7
 java.class.path   = ${groovy.home}/lib/groovy-*.jar
 hashdot.main      = org.codehaus.groovy.tools.GroovyStarter
 
-# Appeared desired by jruby
+hashdot.header.comment = //
+
 script.name       = ${groovy.home}/bin/groovy
 program.name      = groovy
 groovy.start.conf = ${groovy.home}/conf/groovy-starter.conf
