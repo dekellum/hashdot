@@ -26,29 +26,31 @@ Reference |
   <li><a href="#load_order">Load Order</a></li>
   <li><a href="#special">Special Properties</a>
   <ul>
-    <li><a href="#hashdot.profile">hashdot.profile</a></li>
-    <li><a href="#java.class.path">java.class.path</a></li>
-    <li><a href="#hashdot.vm.lib">hashdot.vm.lib</a></li>
-    <li><a href="#hashdot.vm.libpath">hashdot.vm.libpath</a></li>
-    <li><a href="#hashdot.vm.options">hashdot.vm.options</a></li>
-    <li><a href="#hashdot.version">hashdot.version</a></li>
-    <li><a href="#hashdot.script">hashdot.script</a></li>
+    <li><a href="#hashdot.args.pre">hashdot.args.pre</a></li>
+    <li><a href="#hashdot.chdir">hashdot.chdir</a></li>
+    <li><a href="#hashdot.daemonize">hashdot.daemonize</a></li>
+    <li><a href="#hashdot.env.*">hashdot.env.*</a></li>
+    <li><a href="#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
+    <ul>
+      <li><a href="#hashdot.io_redirect.append">hashdot.io_redirect.append</a></li>
+      <li><a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a></li>
+    </ul></li>
     <li><a href="#hashdot.main">hashdot.main</a></li>
     <li><a href="#hashdot.parse_flags.*">hashdot.parse_flags.*</a>
     <ul>
-      <li><a href="#hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></li>
       <li><a href="#hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></li>
+      <li><a href="#hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></li>
     </ul></li>
-    <li><a href="#hashdot.chdir">hashdot.chdir</a></li>
-    <li><a href="#hashdot.daemonize">hashdot.daemonize</a></li>
-    <li><a href="#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
-    <ul>
-      <li><a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a></li>
-      <li><a href="#hashdot.io_redirect.append">hashdot.io_redirect.append</a></li>
-    </ul></li>
-    <li><a href="#hashdot.env.*">hashdot.env.*</a></li>
-    <li><a href="#hashdot.args.pre">hashdot.args.pre</a></li>
+    <li><a href="#hashdot.profile">hashdot.profile</a></li>
+    <li><a href="#hashdot.script">hashdot.script</a></li>
+    <li><a href="#hashdot.user.home">hashdot.user.home</a></li>
+    <li><a href="#hashdot.version">hashdot.version</a></li>
+    <li><a href="#hashdot.vm.lib">hashdot.vm.lib</a></li>
+    <li><a href="#hashdot.vm.libpath">hashdot.vm.libpath</a></li>
+    <li><a href="#hashdot.vm.options">hashdot.vm.options</a></li>
+    <li><a href="#java.class.path">java.class.path</a></li>
   </ul></li>
+
   <li><a href="#environment">Environment Variables</a>
   <ul>
     <li><a href="#HASHDOT_DEBUG">HASHDOT_DEBUG</a></li>
@@ -169,6 +171,86 @@ all profiles and any script header have been read.</p>
 <p>The following properties have special meaning when processed by
 hashdot.</p>
 
+<h3><a name="hashdot.args.pre">hashdot.args.pre</a></h3>
+
+<p>A list of arguments to be prepended to the argument array passed to
+the 'hashdot.main' method (before any script file and arguments passed
+by the user on the command line.)</p>
+
+<h3><a name="hashdot.chdir">hashdot.chdir</a></h3>
+
+<p>Change the process working directory to specified path. This is
+provided since the working directory can not be set from Java, and is
+typically used in conjunction with the daemon profile.  Any
+java.class.path values or hashdot.io_redirect.file may be specified
+relative to the new working directory.</p>
+
+<h3><a name="hashdot.daemonize">hashdot.daemonize</a></h3>
+
+<p>See profile "daemon.hdp". If set to value != "false", Hashdot will
+fork and setsid prior to launching the JVM.</p>
+
+<h3><a name="hashdot.env.*">hashdot.env.*</a></h3>
+
+<p>Setting a property with this prefix sets the equivalent
+non-prefexed environment variable. For example:</p>
+
+<pre>#. hashdot.env.GEM_HOME = /opt/jruby/gems
+</pre>
+
+<p>Sets GEM_HOME to "/opt/jruby/gems" in the environment. Note:
+Currently variable references with this prefix do not provide access
+to all environment variables, but only those previously set with a
+hashdot property.  This features is intended as a workaround for cases
+where an interpreter has existing environment dependencies.</p>
+
+<h3><a name="hashdot.io_redirect.*">hashdot.io_redirect.*</a></h3>
+
+<p>These properties control redirecting STDOUT and STDERR on
+startup. It is strongly encouraged to redirect to a file other than
+/dev/null when running as a daemon (See hashdot.daemonize above.)
+Consider that java level errors/crashes and "kill -QUIT" stack dumps
+will all go to STDERR.  The full script log output may also be sent to
+this file via STDOUT/STDERR.  The log may be rolled via an an external
+agent like logrotate using the standard "postrotate" HUP signal.  These
+properties should typically be overridden in the specific daemon
+script.</p>
+
+<h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
+
+<p>Will redirect STDOUT/STDERR to the named file. When set in
+conjunction with hashdot.daemonize, a HUP signal handler will also be
+registered (after the JVM is loaded) to reopen the named file. This
+facilitates using external log rotating utilities like logrotate.</p>
+
+<h4><a name="hashdot.io_redirect.append">hashdot.io_redirect.append</a></h4>
+
+<p>Unless this variable is set to "false" the file specified by
+hashdot.io_redirect.file will be opened for append.</p>
+
+<h3><a name="hashdot.main">hashdot.main</a></h3>
+
+<p>The java class containing a static main method to call, with the
+script as its first argument.  This property is required.</p>
+
+<pre>#. hashdot.main = com.gravitext.hashdot.TestMain
+</pre>
+
+<h3><a name="hashdot.parse_flags.*">hashdot.parse_flags.*</a></h3>
+
+<p>These properties control interpretation of arguments to identify a
+script file to read for Hashdot headers.</p>
+
+<h4><a name="hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></h4>
+
+<p>A list of flags with following value arguments that will not be
+interpreted as a script file name.</p>
+
+<h4><a name="hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></h4>
+
+<p>A list of flags that will cause hashdot to terminate looking for a
+script file.</p>
+
 <h3><a name="hashdot.profile">hashdot.profile</a></h3>
 
 <p>Load the specified values as properties. Each profile is read from
@@ -181,18 +263,20 @@ Example:</p>
 <pre>#. hashdot.profile += shortlived
 </pre>
 
-<h3><a name="java.class.path">java.class.path</a></h3>
+<h3><a name="hashdot.script">hashdot.script</a></h3>
 
-<p>Used to set the Java system class path (equiv. to '-cp' java
-launcher argument. Supports file name globs on values (* and ?
-wildcards). Values are joined with a ':' as per Java UNIX
-format. Example:</p>
+<p>Set by hashdot to any identified script file to be used as the
+first argument to the intepreter.</p>
 
-<pre>#. java.class.path += /opt/myservice/lib/*.jar
-</pre>
+<h3><a name="hashdot.user.home">hashdot.user.home</a></h3>
 
-<p>Note that CLASSPATH environment variable is ignored, as use of
-environment variables for normal operation of scripts discouraged.</p>
+<p>Set by hashdot to the home directory as found in the password
+database (i.e.: /etc/passwd) for the real user of the current
+process.</p>
+
+<h3><a name="hashdot.version">hashdot.version</a></h3>
+
+<p>Set by hashdot to the hashdot launcher version.</p>
 
 <h3><a name="hashdot.vm.lib">hashdot.vm.lib</a></h3>
 
@@ -220,94 +304,18 @@ appending to this property will function as an override. Example:</p>
 ==>                      -Xmx1500m -Xss1024k
 </pre>
 
-<h3><a name="hashdot.version">hashdot.version</a></h3>
+<h3><a name="java.class.path">java.class.path</a></h3>
 
-<p>Set by hashdot to the hashdot launcher version.</p>
+<p>Used to set the Java system class path (equiv. to '-cp' java
+launcher argument. Supports file name globs on values (* and ?
+wildcards). Values are joined with a ':' as per Java UNIX
+format. Example:</p>
 
-<h3><a name="hashdot.script">hashdot.script</a></h3>
-
-<p>Set by hashdot to any identified script file to be used as the
-first argument to the intepreter.</p>
-
-<h3><a name="hashdot.main">hashdot.main</a></h3>
-
-<p>The java class containing a static main method to call, with the
-script as its first argument.  This property is required.</p>
-
-<pre>#. hashdot.main = com.gravitext.hashdot.TestMain
+<pre>#. java.class.path += /opt/myservice/lib/*.jar
 </pre>
 
-<h3><a name="hashdot.parse_flags.*">hashdot.parse_flags.*</a></h3>
-
-<p>These properties control interpretation of arguments to identify a
-script file to read for Hashdot headers.</p>
-
-<h4><a name="hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></h4>
-
-<p>A list of flags with following value arguments that will not be
-interpreted as a script file name.</p>
-
-<h4><a name="hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></h4>
-
-<p>A list of flags that will cause hashdot to terminate looking for a
-script file.</p>
-
-<h3><a name="hashdot.chdir">hashdot.chdir</a></h3>
-
-<p>Change the process working directory to specified path. This is
-provided since the working directory can not be set from Java, and is
-typically used in conjunction with the daemon profile.  Any
-java.class.path values or hashdot.io_redirect.file may be specified
-relative to the new working directory.</p>
-
-<h3><a name="hashdot.daemonize">hashdot.daemonize</a></h3>
-
-<p>See profile "daemon.hdp". If set to value != "false", Hashdot will
-fork and setsid prior to launching the JVM.</p>
-
-<h3><a name="hashdot.io_redirect.*">hashdot.io_redirect.*</a></h3>
-
-<p>These properties control redirecting STDOUT and STDERR on
-startup. It is strongly encouraged to redirect to a file other than
-/dev/null when running as a daemon (See hashdot.daemonize above.)
-Consider that java level errors/crashes and "kill -QUIT" stack dumps
-will all go to STDERR.  The full script log output may also be sent to
-this file via STDOUT/STDERR.  The log may be rolled via an an external
-agent like logrotate using the standard "postrotate" HUP signal.  These
-properties should typically be overridden in the specific daemon
-script.</p>
-
-<h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
-
-<p>Will redirect STDOUT/STDERR to the named file. When set in
-conjunction with hashdot.daemonize, a HUP signal handler will also be
-registered (after the JVM is loaded) to reopen the named file. This
-facilitates using external log rotating utilities like logrotate.</p>
-
-<h4><a name="hashdot.io_redirect.append">hashdot.io_redirect.append</a></h4>
-
-<p>Unless this variable is set to "false" the file specified by
-hashdot.io_redirect.file will be opened for append.</p>
-
-<h3><a name="hashdot.env.*">hashdot.env.*</a></h3>
-
-<p>Setting a property with this prefix sets the equivalent
-non-prefexed environment variable. For example:</p>
-
-<pre>#. hashdot.env.GEM_HOME = /opt/jruby/gems
-</pre>
-
-<p>Sets GEM_HOME to "/opt/jruby/gems" in the environment. Note:
-Currently variable references with this prefix do not provide access
-to all environment variables, but only those previously set with a
-hashdot property.  This features is intended as a workaround for cases
-where an interpreter has existing environment dependencies.</p>
-
-<h3><a name="hashdot.args.pre">hashdot.args.pre</a></h3>
-
-<p>A list of arguments to be prepended to the argument array passed to
-the 'hashdot.main' method (before any script file and arguments passed
-by the user on the command line.)</p>
+<p>Note that CLASSPATH environment variable is ignored, as use of
+environment variables for normal operation of scripts discouraged.</p>
 
 <h2><a name="environment">Environment Variables</a></h2>
 
@@ -317,7 +325,7 @@ by the user on the command line.)</p>
 standard error.</p>
 
 <div class="copyright">
-  Copyright 2008, David Kellum.  All rights reserved.
+  Copyright 2008-2009, David Kellum.  All rights reserved.
 </div>
 </body>
 </html>
