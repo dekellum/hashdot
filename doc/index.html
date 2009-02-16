@@ -27,9 +27,7 @@ specified directly in a script header and/or via system profiles,
 without resorting to environment variables, command line arguments,
 and the additional wrapper shell scripts needed to maintain them.</p>
 
-<p>Hashdot can support any Java-platform language. Script
-embedded settings support requires language compatibility with Unix
-hashbang '#!' conventions. Sample profiles are provided for 
+<p>Hashdot can support any Java-platform language. Sample profiles are provided for 
 <a href="http://www.jython.org/">Jython</a>, 
 <a href="http://jruby.codehaus.org/">JRuby</a>, 
 <a href="http://www.scala-lang.org/">Scala</a>,    
@@ -131,6 +129,14 @@ jruby -> hashdot*
 puts "hello world!"
 </pre>
 
+<p>Use of a profile-specific symlink is the preferred approach and is
+required for script languages needing an alternative
+
+<a href="reference.html#hashdot.header.comment">hashdot.header.comment</a>, 
+
+since a profile could not otherwise be specified in a script
+header.</p>
+
 <h3><a name="on_the_path">On the PATH</a></h3>
 
 <p>Provided that the above "/usr/bin/jruby" symlink is the first
@@ -143,8 +149,8 @@ puts "hello world!"
 
 <p>Hashdot launching can thus be made completely transparent and
 compatible with the hashbang directives in existing scripts, without
-modification. Similarly, various command line invocations of "jruby" can
-be successfully launched with hashdot:</p>
+modification. Similarly, various command line invocations of a profile
+symlink can be successfully launched:</p>
 
 <pre>% jruby -d hello.rb
 hello world!
@@ -208,7 +214,14 @@ david    16792 27647 89 14:26 pts/2    00:00:00 /opt/java/jdk_sun_1.6.0_05_x32/b
 
 <h3><a name="daemonize">Daemonize</a></h3>
 
-<p>Hashdot supports a "hashdot.daemonize" and "hashdot.io_redirect"
+<p>Hashdot supports 
+
+<a href="reference.html#hashdot.daemonize">hashdot.daemonize</a>
+
+and 
+
+<a href="reference.html#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
+
 properties, conveniently packaged in a provided "daemon" profile, to
 invoke a script as a detached UNIX daemon process. This includes full
 support for directing process STDERR and STDOUT (including JVM) to a
