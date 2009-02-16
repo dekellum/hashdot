@@ -514,9 +514,13 @@ parse_hashdot_header( const char *fname,
     char line[4096];
     apr_size_t length;
 
-
-
     DEBUG( "Parsing hashdot header from %s", fname );
+
+    const char * comment = "#";
+    rv = get_property_value( mp, props, 
+                             "hashdot.header.comment", 0, 0, &comment );
+    if( rv != APR_SUCCESS ) return rv;
+    int clen = strlen( comment );
 
     rv = apr_file_open( &in, fname, 
                         APR_FOPEN_READ, 
@@ -526,6 +530,8 @@ parse_hashdot_header( const char *fname,
         ERROR( "Could not open file [%s].", fname );
         return rv;
     }
+
+    int first = 1;
 
     while( rv == APR_SUCCESS ) {
 
@@ -540,11 +546,20 @@ parse_hashdot_header( const char *fname,
 
         length = strlen( line );
 
+        // Ignore hashbang as first line.
+        if( first ) {
+            first = 0;
+            if( ( length >= 2 ) && ( line[0] == '#' ) && ( line[1] == '!' ) ) {
+                continue;
+            }
+        }
+
         // Test for end of first comment block
-        if( ( length == 0 ) || line[0] != '#' ) break; 
+        if( ( length < clen ) || ( strncmp( line, comment, clen ) != 0 ) ) break; 
         
-        if( ( length > 2 ) && line[1] == '.' ) {
-            rv = parse_line( line + 2, props, rprops, mp );
+        // Parse any hashdot directives.
+        if( ( length > ( clen + 1 ) ) && line[clen] == '.' ) {
+            rv = parse_line( line + clen + 1, props, rprops, mp );
         }
     }
 
@@ -987,7 +1002,7 @@ init_jvm( apr_pool_t *mp,
             int i;
             for( i = 0; i < argc; i++ ) {  //start at arg 0 (post adjusted)
                 jstring arg = (*env)->NewStringUTF( env, argv[i] );
-                DEBUG( "setting: %s", argv[i] );
+                DEBUG( "Argument: %s", argv[i] );
                 if( arg ) {
                     (*env)->SetObjectArrayElement( env, args, argp++, arg );
                     (*env)->DeleteLocalRef( env, arg );
