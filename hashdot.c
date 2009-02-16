@@ -1217,17 +1217,17 @@ find_self_exe( const char **exe_name,
     char buffer[1024];
 #ifdef __MacOS_X__
     uint32_t length = sizeof (buffer);
-    if (_NSGetExecutablePath(buffer, &length) == 0 && buffer[0] == '/') {
+    if (_NSGetExecutablePath( buffer, &length ) == 0 && buffer[0] == '/') {
         *exe_name = apr_pstrndup( mp, buffer, length );
     } 
     else {
-        ERROR("failed to find exe: %s", strerror(errno));
+        ERROR( "failed to find exe: %s", strerror(errno) );
         rv = APR_FROM_OS_ERROR( errno );
     }
 #else
     ssize_t size = readlink( "/proc/self/exe", buffer, sizeof( buffer ) );
     if( size < 0 ) {
-        ERROR("readlink failed: %s", strerror(errno));
+        ERROR( "readlink failed: %s", strerror(errno) );
         rv = APR_FROM_OS_ERROR( errno );
     } 
     else {
@@ -1243,7 +1243,7 @@ set_process_name( int argc,
                   char *name )
 {       
     apr_status_t rv = apr_initialize(); 
-    DEBUG("Renaming Process to: %s",  name);
+    DEBUG( "Renaming Process to: %s", name );
 #ifdef __MacOS_X__
     // TODO: set proc title on OSX
     DEBUG( "Process rename not currently available on OSX" );
