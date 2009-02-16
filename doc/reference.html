@@ -30,6 +30,7 @@ Reference |
     <li><a href="#hashdot.chdir">hashdot.chdir</a></li>
     <li><a href="#hashdot.daemonize">hashdot.daemonize</a></li>
     <li><a href="#hashdot.env.*">hashdot.env.*</a></li>
+    <li><a href="#hashdot.header.comment">hashdot.header.comment</a></li>
     <li><a href="#hashdot.io_redirect.*">hashdot.io_redirect.*</a>
     <ul>
       <li><a href="#hashdot.io_redirect.append">hashdot.io_redirect.append</a></li>
@@ -69,7 +70,8 @@ encodings.</p>
 <h3><a name="header">Script Header</a></h3>
 
 <p>A script <i>header block</i> is defined as an initial contiguous
-sequence of all lines beginning with the '#' comment character. The
+sequence of all lines beginning with the '#' 
+(or <a href="#hashdot.header.comment">hashdot.header.comment</a>). The
 first line not beginning with '#' terminates the header block.  With
 this block, any lines beginning with '#.' will be parsed as hashdot
 property directives.  All other lines within the header are interpreted
@@ -84,6 +86,12 @@ as "regular" comments.</p>
 
 puts "hello"
 </pre>
+
+<p>Support for languages not supporting '#' as a line comment: If 
+<a href="#hashdot.header.comment">hashdot.header.comment</a> is set to
+an alternative line comment string (ex: "//") then the initial hashbang
+line will be ignored, and lines beginning with this comment string
+followed by '.' will be interpreted as property directives.</p>
 
 <h3><a name="profiles">Hashdot Profiles</a></h3>
 
@@ -204,11 +212,20 @@ to all environment variables, but only those previously set with a
 hashdot property.  This features is intended as a workaround for cases
 where an interpreter has existing environment dependencies.</p>
 
+<h3><a name="hashdot.header.comment">hashdot.header.comment</a></h3>
+
+<p>Set an alternative to the standard '#' used when scanning for the
+script header.  For example, groovy and rhino (Javascript) profiles
+set this to "//" instead.</p>
+
 <h3><a name="hashdot.io_redirect.*">hashdot.io_redirect.*</a></h3>
 
 <p>These properties control redirecting STDOUT and STDERR on
 startup. It is strongly encouraged to redirect to a file other than
-/dev/null when running as a daemon (See hashdot.daemonize above.)
+/dev/null when running as a daemon 
+
+(See <a href="#hashdot.daemonize">hashdot.daemonize</a>).
+
 Consider that java level errors/crashes and "kill -QUIT" stack dumps
 will all go to STDERR.  The full script log output may also be sent to
 this file via STDOUT/STDERR.  The log may be rolled via an an external
