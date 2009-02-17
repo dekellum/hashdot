@@ -50,12 +50,16 @@ dist: hashdot
 jruby: hashdot
 	ln -s hashdot jruby
 
-test: hashdot jruby
+test/foo/Bar.class: test/foo/Bar.java
+	$(JAVA_HOME)/bin/javac $^
+
+test: hashdot jruby test/foo/Bar.class
 	test/error/error_tests.sh
 	test/test_props.rb 
 	test/test_env.rb
 	test/test_chdir.rb
 	test/test_daemon.rb
+	test/test_class_path.rb
 	test/test_cmdline.rb param1 param2
 
 clean: 
