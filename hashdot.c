@@ -356,28 +356,34 @@ glob_values( apr_pool_t *mp,
 
     for( i = 0; i < values->nelts; i++ ) {
         const char *val = ((const char **) values->elts )[i];
-        char *lpath = strrchr( val, '/' ); 
-        //FIXME: UNIX only, replace with apr_filepath_root?
-        char *path = ( lpath == NULL ) ? "" : 
-            apr_pstrndup( mp, val, lpath - val + 1 );
+        
+        if( apr_fnmatch_test( val ) ) {
+            char *lpath = strrchr( val, '/' ); 
+            //FIXME: UNIX only, replace with apr_filepath_root?
+            char *path = ( lpath == NULL ) ? "" : 
+                apr_pstrndup( mp, val, lpath - val + 1 );
 
-        apr_array_header_t *globs;
-        rv = apr_match_glob( val, &globs, mp );
-        if( rv != APR_SUCCESS ) {
-            print_error( rv, val );
-            rv = 2;
-            break;
+            apr_array_header_t *globs;
+            rv = apr_match_glob( val, &globs, mp );
+            if( rv != APR_SUCCESS ) {
+                print_error( rv, val );
+                rv = 2;
+                break;
+            }
+            else if( apr_is_empty_array( globs ) ) {
+                rv = APR_FNM_NOMATCH;
+                ERROR( "[%d]: %s not found\n", rv, val );
+                break;
+            }
+            int j;
+            for( j = 0; j < globs->nelts; j++ ) {
+                const char *g = ((const char **) globs->elts )[j];
+                *( (const char **) apr_array_push( *tvalues ) ) = 
+                    apr_pstrcat( mp, path, g, NULL );
+            }
         }
-        else if( apr_is_empty_array( globs ) ) {
-            rv = APR_FNM_NOMATCH;
-            ERROR( "[%d]: %s not found\n", rv, val );
-            break;
-        }
-        int j;
-        for( j = 0; j < globs->nelts; j++ ) {
-            const char *g = ((const char **) globs->elts )[j];
-            *( (const char **) apr_array_push( *tvalues ) ) = 
-                apr_pstrcat( mp, path, g, NULL );
+        else {
+            *( (const char **) apr_array_push( *tvalues ) ) = val;
         }
     }
     

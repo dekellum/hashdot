@@ -1,8 +1,6 @@
 #!/usr/bin/env jruby
 #. hashdot.profile += shortlived
-#. java.class.path += ./test
-
-# FIXME: Note however that "./test/" (trailing slash) currently fails.
+#. java.class.path += ./test/
 
 require 'java'
 
