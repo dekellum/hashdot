@@ -3,6 +3,6 @@ public class Bar
 {
     public String toString() 
     {
-        return "Hello from Bar.";
+        return "PASS: Bar loaded";
     }
 }

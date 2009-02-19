@@ -2,8 +2,4 @@
 #. hashdot.profile += shortlived
 #. java.class.path += ./test/
 
-require 'java'
-
-import 'foo.Bar'
-
-puts Bar.new.to_s
+puts Java::foo.Bar.new.to_s

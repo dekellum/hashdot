@@ -5,3 +5,4 @@ hashdot.dSYM
 test/daemon.log
 *~
 *.class
+test/foobar.jar
