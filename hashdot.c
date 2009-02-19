@@ -176,7 +176,8 @@ get_property_value( apr_pool_t *mp,
                     const char **value );
 
 static void
-set_property_array( apr_hash_t *props, 
+set_property_array( apr_pool_t *mp,
+                    apr_hash_t *props, 
                     const char *name,
                     apr_array_header_t *vals );
 
@@ -257,10 +258,6 @@ int main( int argc, const char *argv[] )
         rv = parse_profile( "default", props, rprops, mp );
     }
 
-    if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
-        set_property_value( mp, props, "hashdot.script", argv[ file_offset ] );
-    }
-
     if( ( rv == APR_SUCCESS ) && 
         ( apr_env_get( &value, "HASHDOT_PROFILE", mp ) == APR_SUCCESS ) ) {
         rv = parse_profile( value, props, rprops, mp );
@@ -275,6 +272,7 @@ int main( int argc, const char *argv[] )
     }
 
     if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
+        set_property_value( mp, props, "hashdot.script", argv[ file_offset ] );
         rv = parse_hashdot_header( argv[ file_offset ], props, rprops, mp );
     }
     
@@ -383,6 +381,19 @@ glob_values( apr_pool_t *mp,
             }
         }
         else {
+            apr_finfo_t info;
+            rv = apr_stat( &info, val, APR_FINFO_TYPE, mp );
+            if( rv != APR_SUCCESS ) {
+                print_error( rv, val );
+                rv = 2;
+                break;
+            }
+            if( ( info.filetype != APR_DIR ) && ( info.filetype != APR_REG ) ) {
+                ERROR( "%s not a file or directory [%d]\n", 
+                       val, (int) info.filetype );
+                rv = 9;
+                break;
+            }
             *( (const char **) apr_array_push( *tvalues ) ) = val;
         }
     }
@@ -815,8 +826,7 @@ parse_line( char *line,
     }
 
     if( ( name != NULL ) && ( rv == APR_SUCCESS ) ) {
-        set_property_array( props, apr_pstrdup( mp, name ), values );
-        DEBUG( "Set %s = %s", name, apr_array_pstrcat( mp, values, ' ' ) );
+        set_property_array( mp, props, apr_pstrdup( mp, name ), values );
     }
 
     return rv;
@@ -882,7 +892,7 @@ init_jvm( apr_pool_t *mp,
     
     if( vals ) {
         rv = compact_option_flags( &vals, mp );
-        set_property_array( props, "hashdot.vm.options", vals );
+        set_property_array( mp, props, "hashdot.vm.options", vals );
 
         if( rv != APR_SUCCESS) return rv;
         options_len += vals->nelts;
@@ -1077,11 +1087,13 @@ get_property_value( apr_pool_t *mp,
 }
 
 static void
-set_property_array( apr_hash_t *props, 
+set_property_array( apr_pool_t *mp,
+                    apr_hash_t *props, 
                     const char *name,
                     apr_array_header_t *vals )
 {
     apr_hash_set( props, name, strlen( name ) + 1, vals );
+    DEBUG( "Set %s = %s", name, apr_array_pstrcat( mp, vals, ' ' ) );
 }
 
 static apr_status_t
@@ -1093,7 +1105,7 @@ set_property_value( apr_pool_t *mp,
     apr_status_t rv = APR_SUCCESS;
     apr_array_header_t *vals = apr_array_make( mp, 1, sizeof( const char* ) );
     *( (const char **) apr_array_push( vals ) ) = apr_pstrdup( mp, value );
-    set_property_array( props, name, vals );
+    set_property_array( mp, props, name, vals );
     return rv;
 }
 
