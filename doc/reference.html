@@ -44,6 +44,7 @@ Reference |
     </ul></li>
     <li><a href="#hashdot.profile">hashdot.profile</a></li>
     <li><a href="#hashdot.script">hashdot.script</a></li>
+    <li><a href="#hashdot.script.dir">hashdot.script.dir</a></li>
     <li><a href="#hashdot.user.home">hashdot.user.home</a></li>
     <li><a href="#hashdot.version">hashdot.version</a></li>
     <li><a href="#hashdot.vm.lib">hashdot.vm.lib</a></li>
@@ -87,11 +88,11 @@ as "regular" comments.</p>
 puts "hello"
 </pre>
 
-<p>Support for languages not supporting '#' as a line comment: If 
-<a href="#hashdot.header.comment">hashdot.header.comment</a> is set to
-an alternative line comment string (ex: "//") then the initial hashbang
-line will be ignored, and lines beginning with this comment string
-followed by '.' will be interpreted as property directives.</p>
+<p>Support for script languages not supporting '#' as a line comment:
+If <a href="#hashdot.header.comment">hashdot.header.comment</a> is set
+to an alternative line comment string (ex: "//") then the initial
+hashbang line will be ignored, and lines beginning with this comment
+string followed by '.' will be interpreted as property directives.</p>
 
 <h3><a name="profiles">Hashdot Profiles</a></h3>
 
@@ -145,7 +146,7 @@ property.name = value
 </pre>
 
 <p>In the above example rprop is expanded at the end of reading all
-profiles and thus the final value of cprop is used. Thus is useful for
+profiles and thus the final value of cprop is used. This is useful for
 allowing overrides in script headers or later profiles.</p>
 
 <h2><a name="load_order">Load Order</a></h2>
@@ -161,7 +162,7 @@ following order.</p>
   </ul></li>
   <li>Script header
   <ul>
-    <li>Header 'hashdot.profile...' references the order given.</li>
+    <li>Header 'hashdot.profile' references in the order given.</li>
   </ul></li>
 </ol>
 
@@ -181,17 +182,25 @@ hashdot.</p>
 
 <h3><a name="hashdot.args.pre">hashdot.args.pre</a></h3>
 
-<p>A list of arguments to be prepended to the argument array passed to
-the 'hashdot.main' method (before any script file and arguments passed
+<p>A list of arguments prepended to the argument array passed to
+the 
+
+<a href="#hashdot.main">hashdot.main</a>
+
+method (before any script file and arguments passed
 by the user on the command line.)</p>
 
 <h3><a name="hashdot.chdir">hashdot.chdir</a></h3>
 
 <p>Change the process working directory to specified path. This is
 provided since the working directory can not be set from Java, and is
-typically used in conjunction with the daemon profile.  Any
-java.class.path values or hashdot.io_redirect.file may be specified
-relative to the new working directory.</p>
+typically used in conjunction with the daemon profile.  The
+
+<a href="#java.class.path">java.class.path</a>
+or
+<a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a> 
+
+values may be specified relative to the new working directory.</p>
 
 <h3><a name="hashdot.daemonize">hashdot.daemonize</a></h3>
 
@@ -200,17 +209,17 @@ fork and setsid prior to launching the JVM.</p>
 
 <h3><a name="hashdot.env.*">hashdot.env.*</a></h3>
 
-<p>Setting a property with this prefix sets the equivalent
-non-prefexed environment variable. For example:</p>
+<p>Setting a property with this prefix sets the equivalent environment
+variable. For example:</p>
 
 <pre>#. hashdot.env.GEM_HOME = /opt/jruby/gems
 </pre>
 
 <p>Sets GEM_HOME to "/opt/jruby/gems" in the environment. Note:
 Currently variable references with this prefix do not provide access
-to all environment variables, but only those previously set with a
-hashdot property.  This features is intended as a workaround for cases
-where an interpreter has existing environment dependencies.</p>
+to environment variables, but only those previously set with a hashdot
+property.  This features is intended as a workaround for cases where
+an interpreter has existing environment dependencies.</p>
 
 <h3><a name="hashdot.header.comment">hashdot.header.comment</a></h3>
 
@@ -236,7 +245,11 @@ script.</p>
 <h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
 
 <p>Will redirect STDOUT/STDERR to the named file. When set in
-conjunction with hashdot.daemonize, a HUP signal handler will also be
+conjunction with 
+
+<a href="#hashdot.daemonize">hashdot.daemonize</a>, 
+
+a HUP signal handler will also be
 registered (after the JVM is loaded) to reopen the named file. This
 facilitates using external log rotating utilities like logrotate.</p>
 
@@ -274,7 +287,7 @@ script file.</p>
 compiled in profile directory, i.e. "jruby" is loaded from
 "/etc/hashdot/profiles/jruby.hdp". Profiles are imported in the order
 specified (including nested imports) and are implied += for purposes
-of passing the final "hashdot.profile" property to the JVM.
+of passing the final hashdot.profile property to the JVM.
 Example:</p>
 
 <pre>#. hashdot.profile += shortlived
@@ -282,8 +295,20 @@ Example:</p>
 
 <h3><a name="hashdot.script">hashdot.script</a></h3>
 
-<p>Set by hashdot to any identified script file to be used as the
-first argument to the intepreter.</p>
+<p>Set by hashdot to the absolute path of the script file, if identified. Note that the script file argument as passed to the script interpreter will still be relative, unless
+
+<a href="#hashdot.chdir">hashdot.chdir</a>
+
+is also used.</p>
+
+
+<h3><a name="hashdot.script.dir">hashdot.script.dir</a></h3>
+
+<p>Set by hashdot to the absolute path of the directory containing the script file, if identified. See
+
+<a href="#java.class.path">java.class.path</a>
+
+for potential usage.</p>
 
 <h3><a name="hashdot.user.home">hashdot.user.home</a></h3>
 
@@ -297,24 +322,31 @@ process.</p>
 
 <h3><a name="hashdot.vm.lib">hashdot.vm.lib</a></h3>
 
-<p>The dynamic library to load for the JVM. Typically this is set to
-an absolute path, which includes selection of the client or server
-VM. See the profiles/default.hdp for configuration details.</p>
+<p>The dynamic library to load for the JVM. An absolute path should be
+used, which includes selection of the client or server VM. See
+profiles/default.hdp for platform specific examples.</p>
 
 <h3><a name="hashdot.vm.libpath">hashdot.vm.libpath</a></h3>
 
 <p>All path values are prepended to LD_LIBRARY_PATH (Linux) or
-DYLD_LIBRARY_PATH (Mac OS X) before loading the JVM. Note the use of
-this approach to the JVM libraries is deprecated in favor of using
-an absolute path specified by hashdot.vm.lib.</p>
+DYLD_LIBRARY_PATH (Mac OS X) before loading the JVM.  Use of this
+property to resolve JVM libraries is deprecated in favor of using an
+absolute 
+
+<a href="#hashdot.vm.lib">hashdot.vm.lib</a> value.</p>
+
 
 <h3><a name="hashdot.vm.options">hashdot.vm.options</a></h3>
 
 <p>Java VM options in flag format as per the java command line. See
 java tool docs for details. The "-server" option is actually achieved
-via hashdot.vm.libpath including server and should not be included
-here. Note that the last setting of any equivalent option wins, thus
-appending to this property will function as an override. Example:</p>
+via 
+
+<a href="#hashdot.vm.lib">hashdot.vm.lib</a>
+
+and should not be included here. Note that the last setting of any
+equivalent option wins, thus appending to this property will function
+as an override. Example:</p>
 
 <pre>#. hashdot.vm.options  = -Xmx500m -Xss1024k
 #. hashdot.vm.options += -Xmx1500m
@@ -323,16 +355,36 @@ appending to this property will function as an override. Example:</p>
 
 <h3><a name="java.class.path">java.class.path</a></h3>
 
-<p>Used to set the Java system class path (equiv. to '-cp' java
-launcher argument. Supports file name globs on values (* and ?
+<p>Used to set the Java system class path (like the '-cp' java
+launcher argument.) Supports file name globs on values (* and ?
 wildcards). Values are joined with a ':' as per Java UNIX
-format. Example:</p>
+format. Examples:</p>
 
 <pre>#. java.class.path += /opt/myservice/lib/*.jar
+#. java.class.path += ./lib
+#. java.class.path += ${hashdot.script.dir}/../lib/*.jar
 </pre>
 
-<p>Note that CLASSPATH environment variable is ignored, as use of
-environment variables for normal operation of scripts discouraged.</p>
+<p>Notes:</p>
+
+<ul>
+<li>Any CLASSPATH environment variable is ignored. (Use of environment
+variables for normal operation of scripts is discouraged.)</li>
+
+<li>Any relative paths are relative to the current working directory
+of the hashdot process (after any 
+<a href="#hashdot.chdir">hashdot.chdir</a>).</li>
+
+<li>Use 
+${<a href="#hashdot.script.dir">hashdot.script.dir</a>} 
+to set paths relative to the directory containing the script.</li>
+
+<li>An error is returned by hashdot if any referenced files,
+directories, or patterns do not actually exist. (A debugging
+improvement over java '-cp' behavior.)</li>
+
+</ul>
+
 
 <h2><a name="environment">Environment Variables</a></h2>
 

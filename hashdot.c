@@ -105,6 +105,11 @@ set_user_prop( apr_hash_t *props,
                apr_pool_t *mp );
 
 static apr_status_t
+set_script_props( apr_hash_t *props, 
+                  const char *script,
+                  apr_pool_t *mp );
+
+static apr_status_t
 check_hashdot_cwd( apr_hash_t *props, 
                    const char **script,
                    apr_pool_t *mp );
@@ -233,9 +238,9 @@ int main( int argc, const char *argv[] )
                 file_offset = 1;
             }
             else {
-                ERROR( "script-file argument required.\n"
+                ERROR( "Missing required <script-file> argument.\n"
                        "#. hashdot.version = %s\n"
-                       "Usage: %s script-file", 
+                       "Usage: %s <script-file>", 
                        HASHDOT_VERSION, argv[0] );
                 rv = 1;
             }
@@ -272,7 +277,10 @@ int main( int argc, const char *argv[] )
     }
 
     if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
-        set_property_value( mp, props, "hashdot.script", argv[ file_offset ] );
+        rv = set_script_props( props, argv[ file_offset ], mp );
+    }
+
+    if( ( rv == APR_SUCCESS ) && ( file_offset > 0 ) ) {
         rv = parse_hashdot_header( argv[ file_offset ], props, rprops, mp );
     }
     
@@ -303,14 +311,16 @@ int main( int argc, const char *argv[] )
             rv = set_process_name(argc, argv, rename);
         }
     }
-        
+
     if( rv == APR_SUCCESS ) {
         set_property_value( mp, props, "hashdot.version", HASHDOT_VERSION );
     }
 
+    // Change directory to hashdot.chdir if set, and make any script
+    // path absolute.
     if( rv == APR_SUCCESS ) {
         rv = check_hashdot_cwd( props, 
-                                (file_offset > 0) ? argv + file_offset : NULL, 
+                                (file_offset > 0) ? argv + file_offset : NULL,
                                 mp );
     }
 
@@ -319,6 +329,7 @@ int main( int argc, const char *argv[] )
     }
 
     if( rv == APR_SUCCESS ) {
+        // Note: java.class.path is expanded/globed/resolved here
         rv = init_jvm( mp, props, argc-1, argv+1 );
     }
 
@@ -344,6 +355,29 @@ set_user_prop( apr_hash_t *props,
 }
 
 static apr_status_t
+set_script_props( apr_hash_t *props, 
+                  const char *script,
+                  apr_pool_t *mp )
+{
+    apr_status_t rv = APR_SUCCESS;
+
+    char *absolute_script = NULL;
+    apr_filepath_merge( &absolute_script, NULL, script, 0, mp );
+
+    rv = set_property_value( mp, props, "hashdot.script", absolute_script );
+
+    char *lpath = strrchr( absolute_script, '/' ); 
+    char *dir = ( lpath == NULL ) ? "." : 
+        apr_pstrndup( mp, absolute_script, lpath - absolute_script );
+
+    rv = set_property_value( mp, props, "hashdot.script.dir", dir );
+
+    return rv;
+}
+
+
+
+static apr_status_t
 glob_values( apr_pool_t *mp, 
              apr_array_header_t *values, 
              apr_array_header_t **tvalues )
@@ -357,9 +391,8 @@ glob_values( apr_pool_t *mp,
         
         if( apr_fnmatch_test( val ) ) {
             char *lpath = strrchr( val, '/' ); 
-            //FIXME: UNIX only, replace with apr_filepath_root?
-            char *path = ( lpath == NULL ) ? "" : 
-                apr_pstrndup( mp, val, lpath - val + 1 );
+            char *path = ( lpath == NULL ) ? 
+                "" : apr_pstrndup( mp, val, lpath - val + 1 );
 
             apr_array_header_t *globs;
             rv = apr_match_glob( val, &globs, mp );
@@ -1360,10 +1393,7 @@ check_hashdot_cwd( apr_hash_t *props,
             
             // Convert to absolute script path if provided.
             if( script != NULL ) {
-                char *absolute_script = NULL;
-                apr_filepath_merge( &absolute_script, NULL, *script, 0, mp );
-                *script = absolute_script;
-                DEBUG( "Absolute script path is %s", absolute_script );
+                rv = get_property_value( mp, props, "hashdot.script", 0, 1, script );
             }
 
             DEBUG( "Changing working dir to %s", nwd );

@@ -40,11 +40,9 @@
 #. rprop := first ${cprop}
 #. cprop = second
 
-require 'java'
 require 'test/unit'
 
 class TestProperties < Test::Unit::TestCase
-  import 'java.lang.System'
 
   def test_whitespace_and_add
     assert_prop( "test.prop.a", "value2 value3" )
@@ -83,15 +81,22 @@ class TestProperties < Test::Unit::TestCase
   end
 
   def test_hashdot_script
-    assert_prop( "hashdot.script", __FILE__ )
+    assert_prop( "hashdot.script", File.expand_path( __FILE__) )
+    assert_prop( "hashdot.script.dir", 
+                 File.dirname( File.expand_path( __FILE__ ) ) )
   end
 
-  def assert_prop( name, value )
-    assert_equal( value, property( name ) )
+  def assert_prop( name, expected, message = nil )
+    actual = property( name )
+    full_message = 
+      build_message( message, 
+                     "Property #{name}: <?> expected but was <?>.\n",
+                     expected, actual )
+    assert_block( full_message ) { expected == actual }
   end
 
   def property( name )
-    System.getProperty( name )
+    Java::java.lang.System.getProperty( name )
   end
 
 end

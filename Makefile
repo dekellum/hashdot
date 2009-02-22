@@ -54,18 +54,15 @@ test/foo/Bar.class test/foobar.jar : test/foo/Bar.java
 	$(JAVA_HOME)/bin/javac $^
 	$(JAVA_HOME)/bin/jar -cf test/foobar.jar -C test foo
 
+CPATH_TESTS = $(wildcard test/test_class_path_?.rb)
 
 test: hashdot jruby test/foo/Bar.class test/foobar.jar
 	test/error/error_tests.sh
 	test/test_props.rb 
 	test/test_env.rb
 	test/test_chdir.rb
+	@for tst in $(CPATH_TESTS); do echo $$tst; $$tst; done
 	test/test_daemon.rb
-	test/test_class_path_1.rb
-	test/test_class_path_2.rb
-	test/test_class_path_3.rb
-	test/test_class_path_4.rb
-	test/test_class_path_5.rb
 	test/test_cmdline.rb param1 param2
 
 clean: 
