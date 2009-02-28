@@ -1,0 +1,8 @@
+# HashDot profile for Clojure programs
+#. hashdot.profile = clj
+
+java.class.path = ${hashdot.user.home}/src/clojure/clojure.jar
+java.class.path += ${hashdot.user.home}/src/clojure-contrib/clojure-contrib.jar
+
+hashdot.main           = clojure.main
+hashdot.header.comment = ;;
