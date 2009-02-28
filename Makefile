@@ -42,7 +42,7 @@ install: hashdot
 	install -m 755 hashdot $(INSTALL_BIN)
 	cd $(INSTALL_BIN) && \
 	for sl in $(INSTALL_SYMLINKS); do \
-		test -e $$sl || ln -s hashdot sl; \
+		test -e $$sl || ln -s hashdot $$sl; \
 	done
 
 dist: hashdot
