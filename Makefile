@@ -34,7 +34,6 @@ ALL_SYMLINKS = clj jruby jython groovy rhino scala
 
 all: hashdot
 
-
 # Install to INSTALL_BIN and PROFILE_DIR
 install: hashdot
 	install -d $(PROFILE_DIR)

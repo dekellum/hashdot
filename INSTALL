@@ -35,7 +35,7 @@ Note: This needs some work, in particular use of autoconf, etc.
 
       Default: /opt/bin
 
-   e. (Optional) Change set of hashdot symlinks desired for install.
+   e. (Optional) Change set of INSTALL_SYMLINKS desired for install.
 
 3. Edit ./profiles/*
 
