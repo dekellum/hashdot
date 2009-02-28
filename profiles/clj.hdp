@@ -10,3 +10,9 @@ java.class.path = ${clojure.home}/clojure.jar
 
 hashdot.main = clojure.main
 hashdot.header.comment = ;;
+
+# Arguments following these flags are not files to scan for headers.
+hashdot.parse_flags.value_args = -i -e 
+
+# Give up looking for a script header with any of these
+hashdot.parse_flags.terminal = -r -
