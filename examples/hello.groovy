@@ -1,6 +1,5 @@
 #!/usr/bin/env groovy
-// Must find symlink groovy -> hashdot* in path, since groovy.hdp 
-// sets hashdot.header.comment = "//" for below to work:
+//.hashdot.profile = shortlived
 //.test.prop = "hello world!"
 //
 

@@ -1,5 +1,4 @@
-#!/usr/bin/env hashdot
-#. hashdot.profile = jruby-shortlived
-## or: #!/opt/bin/jruby-shortlived
+#!/usr/bin/env jruby
+#.hashdot.profile = jruby-shortlived
 
 puts "hello world!"

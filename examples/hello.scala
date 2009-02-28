@@ -1,12 +1,10 @@
-#!/usr/bin/env hashdot
-## Above hashbang could be /opt/bin/scala for simplicity
-#. hashdot.profile = scala shortlived
+#!/usr/bin/env scala
+#.hashdot.profile = shortlived
 !#
 class HelloWorld {
-    def foo = {
-      println("Hello, world!")
-      Thread.sleep(30000);
-    }
+  def foo = {
+    println("hello world!")
+  }
 }
 val h = new HelloWorld
 h.foo

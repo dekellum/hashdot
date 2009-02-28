@@ -1,5 +1,4 @@
-#!/usr/bin/env hashdot
-# -*- ruby -*-
+#!/usr/bin/env jruby
 #. hashdot.profile = jruby-shortlived
 ## List shared libraries loaded.
 

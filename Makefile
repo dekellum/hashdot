@@ -8,6 +8,9 @@ APR_CONFIG=$(shell which apr-1-config)
 # Install hashdot binaries to specified directory
 INSTALL_BIN=/opt/bin
 
+# The set of symlinks (from all below) to insall
+INSTALL_SYMLINKS = jruby
+
 # Where to install and find profiles (*.hdp) 
 # export PROFILE_DIR=./profiles to work in source directory
 PROFILE_DIR?=/opt/hashdot/profiles
@@ -27,18 +30,21 @@ CFLAGS=$(shell ${APR_CONFIG} --cflags --cppflags --includes) -O2 -Wall -fno-stri
 LDFLAGS=$(shell ${APR_CONFIG} --ldflags)
 LDLIBS=$(shell ${APR_CONFIG} --libs --link-ld)
 
+ALL_SYMLINKS = clj jruby jython groovy rhino scala
+
 all: hashdot
 
+
 # Install to INSTALL_BIN and PROFILE_DIR
-# Note: You might want to install different symlinks. These offer
-# convenient shortcuts to same-named profiles.
 install: hashdot
 	install -d $(PROFILE_DIR)
 	install -m 644 profiles/*.hdp $(PROFILE_DIR)
 	install -d $(INSTALL_BIN)
 	install -m 755 hashdot $(INSTALL_BIN)
-	cd $(INSTALL_BIN) && test -e jruby || ln -s hashdot jruby
-	cd $(INSTALL_BIN) && test -e jruby-shortlived || ln -s hashdot jruby-shortlived
+	cd $(INSTALL_BIN) && \
+	for sl in $(INSTALL_SYMLINKS); do \
+		test -e $$sl || ln -s hashdot sl; \
+	done
 
 dist: hashdot
 	mkdir hashdot-$(VERSION)
@@ -46,9 +52,8 @@ dist: hashdot
 	tar --exclude '.svn' --exclude '*~' -zcvf hashdot-$(VERSION)-src.tar.gz hashdot-$(VERSION)
 	rm -rf hashdot-$(VERSION)
 
-# jruby symlink used in some tests
-jruby: hashdot
-	ln -s hashdot jruby
+$(ALL_SYMLINKS): hashdot
+	ln -sf hashdot $@
 
 test/foo/Bar.class test/foobar.jar : test/foo/Bar.java
 	$(JAVA_HOME)/bin/javac $^
@@ -65,7 +70,13 @@ test: hashdot jruby test/foo/Bar.class test/foobar.jar
 	test/test_daemon.rb
 	test/test_cmdline.rb param1 param2
 
+# Requires all profiles working
+EXAMPLES = $(wildcard examples/*)
+test-examples : $(ALL_SYMLINKS)
+	@for example in $(EXAMPLES); do echo $$example; $$example; done
+
 clean: 
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
+	rm -rf $(ALL_SYMLINKS)
 
-.PHONY : test all install dist
+.PHONY : test test-examples all install dist

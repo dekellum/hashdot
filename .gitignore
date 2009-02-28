@@ -1,6 +1,11 @@
 hashdot
-hashdot-*.tar.gz
+clj
+groovy
 jruby
+jython
+rhino
+scala
+hashdot-*.tar.gz
 hashdot.dSYM
 test/daemon.log
 *~

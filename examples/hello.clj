@@ -1,5 +1,5 @@
 #!/usr/bin/env clj
-;; Must symlink clj -> hashdot* in path since Clojure uses ;; comment style
+;;.hashdot.profile = shortlived
 ;;.test.prop = "hello world!"
 ;;
 
