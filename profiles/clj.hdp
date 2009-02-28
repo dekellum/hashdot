@@ -1,8 +1,12 @@
 # HashDot profile for Clojure programs
 #. hashdot.profile = clj
 
-java.class.path = ${hashdot.user.home}/src/clojure/clojure.jar
-java.class.path += ${hashdot.user.home}/src/clojure-contrib/clojure-contrib.jar
+clojure.home = /opt/dist/clojure-20081217
 
-hashdot.main           = clojure.main
+java.class.path = ${clojure.home}/clojure.jar
+
+# Add contrib jar (separate download?)
+# java.class.path += ${clojure.home}/clojure-contrib.jar
+
+hashdot.main = clojure.main
 hashdot.header.comment = ;;
