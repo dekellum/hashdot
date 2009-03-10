@@ -51,6 +51,10 @@ dist: hashdot
 	tar --exclude '.svn' --exclude '*~' -zcvf hashdot-$(VERSION)-src.tar.gz hashdot-$(VERSION)
 	rm -rf hashdot-$(VERSION)
 
+publish: dist
+	rsync -auP hashdot-$(VERSION)-src.tar.gz  dekellum@frs.sourceforge.net:uploads/
+	rsync --exclude ’*~’ doc/ dekellum,hashdot@web.sourceforge.net:/home/groups/h/ha/hashdot/htdocs/
+
 $(ALL_SYMLINKS): hashdot
 	ln -sf hashdot $@
 
@@ -78,4 +82,4 @@ clean:
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
 	rm -rf $(ALL_SYMLINKS)
 
-.PHONY : test test-examples all install dist
+.PHONY : test test-examples all install dist publish
