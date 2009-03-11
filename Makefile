@@ -53,7 +53,7 @@ dist: hashdot
 
 publish: dist
 	rsync -auP hashdot-$(VERSION)-src.tar.gz  dekellum@frs.sourceforge.net:uploads/
-	rsync --exclude ’*~’ doc/ dekellum,hashdot@web.sourceforge.net:/home/groups/h/ha/hashdot/htdocs/
+	rsync -aP --exclude ’*~’ doc/ dekellum,hashdot@web.sourceforge.net:/home/groups/h/ha/hashdot/htdocs/
 
 $(ALL_SYMLINKS): hashdot
 	ln -sf hashdot $@
