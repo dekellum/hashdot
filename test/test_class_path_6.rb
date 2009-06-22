@@ -1,4 +1,4 @@
-#!/usr/bin/env jruby
+#!./jruby
 #. hashdot.profile += jruby-shortlived
 #. hashdot.chdir = ./test
 #. java.class.path += ./foobar.jar
