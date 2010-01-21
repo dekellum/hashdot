@@ -1,7 +1,7 @@
 package foo;
-public class Bar 
+public class Bar
 {
-    public String toString() 
+    public String toString()
     {
         return "PASS: Bar loaded";
     }

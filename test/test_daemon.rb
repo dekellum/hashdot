@@ -24,7 +24,7 @@ class TestCmdLine < Test::Unit::TestCase
       break if( File.exists?( LOG ) && File.size( LOG ) > 0 )
       tries -= 1
     end
-    
+
     assert_equal( "hello from daemon", File.read( LOG ).strip )
   end
 

@@ -6,7 +6,7 @@
 # its a race condition if it will be in the lsof output below.
 IO.popen( "echo hello", "r" ) { |f| f.read }
 
-def loaded_libs 
+def loaded_libs
   libs = []
   IO.popen( "lsof -p #{Process.pid}", "r" ) do |f|
     f.each do |line|

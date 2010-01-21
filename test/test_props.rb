@@ -3,7 +3,7 @@
 #
 ## Test properity setters via jruby Test::Unit on results.
 #
-## test_whitespace_and_add 
+## test_whitespace_and_add
 #.test.prop.a+=value1
 #.test.prop.a=value2
 #.test.prop.a+=value3
@@ -13,12 +13,12 @@
 #.test.prop.c+=value1
 #.test.prop.c=value2
 #.test.prop.c+=value3
-#. test.prop.d  +=  value1  
-#.  test.prop.d =   value2   
-#. test.prop.d  +=   value3 
+#. test.prop.d  +=  value1
+#.  test.prop.d =   value2
+#. test.prop.d  +=   value3
 #
 ## test_add_equals
-#. a = value-a 
+#. a = value-a
 #. ab = ${a} value-b
 #. abab += "${ab} ${ab}"
 #. c = value-c
@@ -28,13 +28,13 @@
 #. vc1 = "string  value"
 #. vc2 = "string  \"quotes\""
 #. vc3 = "\tstring\\line\n\r"
-#. vc4 =  "array with strings"  string"2 
+#. vc4 =  "array with strings"  string"2
 #. vc5 = value=5
 #. vc6 =  value+6  +=value7 value=8
 #. vc7 = "value = 7"
 #
 ## glob test
-#. java.class.path += test/test_prop*.rb 
+#. java.class.path += test/test_prop*.rb
 #
 ## recursive/delayed (:=) prop test
 #. rprop := first ${cprop}
@@ -50,7 +50,7 @@ class TestProperties < Test::Unit::TestCase
     assert_prop( "test.prop.c", "value2 value3" )
     assert_prop( "test.prop.d", "value2 value3" )
   end
-  
+
   def test_add_equals
     assert_prop( "a", "value-a" )
     assert_prop( "ab", "value-a value-b" )
@@ -82,14 +82,14 @@ class TestProperties < Test::Unit::TestCase
 
   def test_hashdot_script
     assert_prop( "hashdot.script", File.expand_path( __FILE__) )
-    assert_prop( "hashdot.script.dir", 
+    assert_prop( "hashdot.script.dir",
                  File.dirname( File.expand_path( __FILE__ ) ) )
   end
 
   def assert_prop( name, expected, message = nil )
     actual = property( name )
-    full_message = 
-      build_message( message, 
+    full_message =
+      build_message( message,
                      "Property #{name}: <?> expected but was <?>.\n",
                      expected, actual )
     assert_block( full_message ) { expected == actual }

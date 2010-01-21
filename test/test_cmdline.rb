@@ -8,11 +8,11 @@ ARGV_ORIG = ARGV.dup
 require 'test/unit'
 
 class TestCmdLine < Test::Unit::TestCase
-  
+
   def test_script_is_arg_zero
     assert_equal( __FILE__ , $0 )
   end
-  
+
   def test_ps_command_line
     args = `ps -o command -p #{Process.pid}`.split
     args.shift
