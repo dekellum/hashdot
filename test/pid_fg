@@ -1,0 +1,6 @@
+#!./jruby
+#-*- ruby -*-
+#. hashdot.pid_file         = ${hashdot.script}.pid
+
+puts "Exiting abruptly..."
+exit(1)
