@@ -11,7 +11,7 @@ INSTALL_BIN=/opt/bin
 # The set of symlinks (from all below) to insall
 INSTALL_SYMLINKS = jruby
 
-# Where to install and find profiles (*.hdp) 
+# Where to install and find profiles (*.hdp)
 # export PROFILE_DIR=./profiles to work in source directory
 PROFILE_DIR?=/opt/hashdot/profiles
 
@@ -66,19 +66,20 @@ CPATH_TESTS = $(wildcard test/test_class_path_?.rb)
 
 test: hashdot jruby test/foo/Bar.class test/foobar.jar
 	test/error/error_tests.sh
-	test/test_props.rb 
+	test/test_props.rb
 	test/test_env.rb
 	test/test_chdir.rb
 	@for tst in $(CPATH_TESTS); do echo $$tst; $$tst; done
 	test/test_daemon.rb
 	test/test_cmdline.rb param1 param2
+	test/test_pid_file
 
 # Requires all profiles working
 EXAMPLES = $(wildcard examples/*)
 test-examples : $(ALL_SYMLINKS)
 	@for example in $(EXAMPLES); do echo $$example; $$example; done
 
-clean: 
+clean:
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
 	rm -rf $(ALL_SYMLINKS)
 

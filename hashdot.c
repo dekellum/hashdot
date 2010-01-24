@@ -1,5 +1,5 @@
 /**************************************************************************
- * Copyright (C) 2008 David Kellum
+ * Copyright (C) 2008-2010 David Kellum
  * This file is part of Hashdot.
  *
  * Hashdot is free software; you can redistribute it and/or modify it
@@ -119,6 +119,14 @@ check_daemonize( apr_hash_t *props,
                  apr_pool_t *mp );
 
 static apr_status_t
+lock_pid_file( apr_hash_t *props,
+               apr_pool_t *mp );
+
+static apr_status_t
+unlock_pid_file( apr_hash_t *props,
+                 apr_pool_t *mp );
+
+static apr_status_t
 init_jvm( apr_pool_t *mp,
           apr_hash_t *props,
           int argc,
@@ -197,11 +205,18 @@ static void reopen_streams( int signo );
 static const char * _redirect_fname = NULL;
 static int _debug = 0;
 
+static apr_file_t *_pid_file = NULL;
+
 #define DEBUG(format, args...) \
     if( _debug ) { fprintf( stderr, "HASHDOT DEBUG: " ); \
                    fprintf( stderr, format , ## args); \
                    fprintf( stderr, "\n" ); \
                    fflush( stderr ); }
+
+#define WARN(format, args...) \
+    fprintf( stderr, "HASHDOT WARN: " ); \
+    fprintf( stderr, format , ## args); \
+    fprintf( stderr, "\n" );
 
 #define ERROR(format, args...) \
     fprintf( stderr, "HASHDOT ERROR: " ); \
@@ -326,8 +341,16 @@ int main( int argc, const char *argv[] )
     }
 
     if( rv == APR_SUCCESS ) {
+        rv = lock_pid_file( props, mp );
+    }
+
+    if( rv == APR_SUCCESS ) {
         // Note: java.class.path is expanded/globed/resolved here
         rv = init_jvm( mp, props, argc-1, argv+1 );
+    }
+
+    if( rv == APR_SUCCESS ) {
+        rv = unlock_pid_file( props, mp );
     }
 
     if( rv > APR_OS_START_ERROR ) {
@@ -1448,6 +1471,66 @@ check_daemonize( apr_hash_t *props,
 
             if( daemon ) _redirect_fname = fname;
         }
+    }
+
+    return rv;
+}
+
+static apr_status_t
+lock_pid_file( apr_hash_t *props,
+               apr_pool_t *mp )
+{
+    apr_status_t rv = APR_SUCCESS;
+
+    const char * pfile_name = NULL;
+    rv = get_property_value( mp, props, "hashdot.pid_file", 0, 0, &pfile_name );
+
+    if( ( rv == APR_SUCCESS ) && ( pfile_name != NULL ) ) {
+
+        rv = apr_file_open( &_pid_file, pfile_name,
+                            ( APR_READ | APR_WRITE | APR_CREATE ),
+                            ( APR_FPROT_UREAD | APR_FPROT_UWRITE |
+                              APR_FPROT_GREAD | APR_FPROT_WREAD ),
+                            mp );
+
+        if( rv != APR_SUCCESS ) {
+            ERROR( "Could not open pid file [%s] for write.", pfile_name );
+        }
+
+        if( rv == APR_SUCCESS ) {
+            rv = apr_file_lock( _pid_file,
+                                APR_FLOCK_EXCLUSIVE | APR_FLOCK_NONBLOCK );
+
+            if( rv != APR_SUCCESS ) {
+                WARN( "pid_file [%s] already locked. Exiting.", pfile_name );
+                apr_file_close( _pid_file );
+            }
+        }
+
+        if( rv == APR_SUCCESS ) {
+            apr_file_printf( _pid_file, "%d\n", getpid() );
+        }
+    }
+
+    return rv;
+}
+
+static apr_status_t
+unlock_pid_file( apr_hash_t *props,
+                 apr_pool_t *mp )
+{
+    apr_status_t rv = APR_SUCCESS;
+
+    const char * pfile_name = NULL;
+    rv = get_property_value( mp, props, "hashdot.pid_file", 0, 0, &pfile_name );
+
+    if( ( rv == APR_SUCCESS ) && ( pfile_name != NULL ) ) {
+        rv = apr_file_remove( pfile_name, mp );
+    }
+
+    if( _pid_file != NULL ) {
+        rv = apr_file_close( _pid_file ) || rv;
+        _pid_file = NULL;
     }
 
     return rv;

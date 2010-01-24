@@ -1,0 +1,35 @@
+#!./jruby
+#-*- ruby -*-
+#. hashdot.pid_file = ${hashdot.script}.pid
+
+tdir = File.dirname( __FILE__ )
+
+efile  = File.join( tdir, "pid_daemon.err" )
+daemon = File.join( tdir, "pid_daemon" )
+pfile  = File.join( tdir, "pid_daemon.pid" )
+lfile  = File.join( tdir, "pid_daemon.log" )
+
+File.unlink( efile ) if File.exist?( efile )
+File.unlink( lfile ) if File.exist?( lfile )
+
+40.times do
+  system( daemon ) or raise $?
+  break if File.exist?( efile )
+  sleep( rand * 0.25 )
+end
+
+if File.exist?( efile )
+  open( efile ) do |ef|
+    ef.each { |l| puts l }
+  end
+  exit 1
+end
+
+100.times do
+  break unless File.exist?( pfile )
+  sleep 0.1
+end
+
+if File.exist?( pfile )
+  puts( "ERROR: #{pfile} exists" )
+end

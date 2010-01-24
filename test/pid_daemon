@@ -1,0 +1,26 @@
+#!./jruby
+#-*- ruby -*-
+#. hashdot.chdir            = ./test
+#. hashdot.profile         += daemon
+#. hashdot.pid_file         = ${hashdot.script}.pid
+#. hashdot.io_redirect.file = ${hashdot.script}.log
+
+ppid = -1
+begin
+  pfile = Java::java.lang.System.get_property( 'hashdot.pid_file' )
+
+  # Note: Avoid IO.read( "./pid_file.pid" ) which resets our pid lock
+  fpid = `cat #{pfile}`.strip.to_i
+  ppid = Process.pid
+
+  raise "ERROR: #{pfile} #{fpid} != #{ppid}" if fpid != ppid
+
+  delay = rand * 3.0
+  puts "pid #{ppid}: sleeping #{delay}s..."
+  sleep delay
+  puts "pid #{ppid}: exiting"
+rescue => e
+  open( "pid_daemon.err", "w+" ) do |out|
+    out.puts "pid #{ppid}: #{e.class}: #{e}"
+  end
+end
