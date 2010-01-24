@@ -200,6 +200,9 @@ set_property_value( apr_pool_t *mp,
 
 static apr_status_t install_hup_handler();
 
+static void jvm_abort_hook();
+static void jvm_exit_hook( int status );
+
 static void reopen_streams( int signo );
 
 static const char * _redirect_fname = NULL;
@@ -931,7 +934,7 @@ init_jvm( apr_pool_t *mp,
 
     if( rv != APR_SUCCESS ) return rv;
 
-    int options_len = apr_hash_count( props );
+    int options_len = 2 + apr_hash_count( props );
 
     vals = get_property_array( props, "hashdot.vm.options" );
 
@@ -944,6 +947,12 @@ init_jvm( apr_pool_t *mp,
     }
 
     JavaVMOption options[ options_len ];
+
+    // Install exit and abort hooks (first 2)
+    options[opt  ].optionString = "exit";
+    options[opt++].extraInfo    = &jvm_exit_hook;
+    options[opt  ].optionString = "abort";
+    options[opt++].extraInfo    = &jvm_abort_hook;
 
     if( vals ) {
         int i;
@@ -1554,4 +1563,14 @@ static apr_status_t install_hup_handler()
         apr_signal( SIGHUP, &reopen_streams );
     }
     return APR_SUCCESS;
+}
+
+void jvm_abort_hook()
+{
+    WARN( "abort hook: abnormal exit." );
+}
+
+void jvm_exit_hook( int status )
+{
+    DEBUG( "exit hook: status %d.", status );
 }
