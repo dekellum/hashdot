@@ -2,5 +2,5 @@
 #-*- ruby -*-
 #. hashdot.pid_file         = ${hashdot.script}.pid
 
-puts "Exiting abruptly..."
+puts "Exiting abruptly with status code 1"
 exit(1)
