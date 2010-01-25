@@ -15,7 +15,7 @@ INSTALL_SYMLINKS = jruby
 # export PROFILE_DIR=./profiles to work in source directory
 PROFILE_DIR?=/opt/hashdot/profiles
 
-VERSION=1.3.1
+VERSION=1.4.0
 
 CC=gcc
 CFLAGS=$(shell ${APR_CONFIG} --cflags --cppflags --includes) -O2 -Wall -fno-strict-aliasing -g \
