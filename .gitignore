@@ -12,3 +12,5 @@ test/daemon.log
 *.class
 test/foobar.jar
 test/pid_daemon.log
+*.o
+Makefile.deps

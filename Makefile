@@ -34,6 +34,16 @@ ALL_SYMLINKS = clj jruby jython groovy rhino scala
 
 all: hashdot
 
+OBJS = runtime.o daemon.o jvm.o libpath.o main.o pidfile.o property.o
+
+hashdot: $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LDLIBS)
+
+Makefile.deps : $(OBJS:%.o=%.c) *.h
+	$(CC) -MM $(CFLAGS) $(OBJS:%.o=%.c) > $@
+
+include Makefile.deps
+
 # Install to INSTALL_BIN and PROFILE_DIR
 install: hashdot
 	install -d $(PROFILE_DIR)
