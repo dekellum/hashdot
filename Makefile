@@ -57,7 +57,7 @@ install: hashdot
 
 dist: hashdot
 	mkdir hashdot-$(VERSION)
-	cp -a INSTALL Makefile hashdot.c profiles test doc examples hashdot-$(VERSION)
+	cp -a INSTALL Makefile *.c *.h profiles test doc examples hashdot-$(VERSION)
 	tar --exclude '.svn' --exclude '*~' -zcvf hashdot-$(VERSION)-src.tar.gz hashdot-$(VERSION)
 	rm -rf hashdot-$(VERSION)
 
@@ -92,5 +92,7 @@ test-examples : $(ALL_SYMLINKS)
 clean:
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
 	rm -rf $(ALL_SYMLINKS)
+	rm -rf *.o
+	rm -rf Makefile.deps
 
 .PHONY : test test-examples all install dist publish
