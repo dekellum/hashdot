@@ -42,6 +42,7 @@ Reference |
       <li><a href="#hashdot.parse_flags.terminal">hashdot.parse_flags.terminal</a></li>
       <li><a href="#hashdot.parse_flags.value_args">hashdot.parse_flags.value_args</a></li>
     </ul></li>
+    <li><a href="#hashdot.pid_file">hashdot.pid_file</a></li>
     <li><a href="#hashdot.profile">hashdot.profile</a></li>
     <li><a href="#hashdot.script">hashdot.script</a></li>
     <li><a href="#hashdot.script.dir">hashdot.script.dir</a></li>
@@ -71,7 +72,7 @@ encodings.</p>
 <h3><a name="header">Script Header</a></h3>
 
 <p>A script <i>header block</i> is defined as an initial contiguous
-sequence of all lines beginning with the '#' 
+sequence of all lines beginning with the '#'
 (or <a href="#hashdot.header.comment">hashdot.header.comment</a>). The
 first line not beginning with '#' terminates the header block.  With
 this block, any lines beginning with '#.' will be parsed as hashdot
@@ -108,7 +109,6 @@ property.name = value
 <h3><a name="directives">Property directives</a></h3>
 
 <p>Single values and strings:</p>
-
 
 <pre>#. x.y.z = constant_value
 #. x.y.z = "string value"
@@ -183,7 +183,7 @@ hashdot.</p>
 <h3><a name="hashdot.args.pre">hashdot.args.pre</a></h3>
 
 <p>A list of arguments prepended to the argument array passed to
-the 
+the
 
 <a href="#hashdot.main">hashdot.main</a>
 
@@ -198,7 +198,7 @@ typically used in conjunction with the daemon profile.  The
 
 <a href="#java.class.path">java.class.path</a>
 or
-<a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a> 
+<a href="#hashdot.io_redirect.file">hashdot.io_redirect.file</a>
 
 values may be specified relative to the new working directory.</p>
 
@@ -231,7 +231,7 @@ set this to "//" instead.</p>
 
 <p>These properties control redirecting STDOUT and STDERR on
 startup. It is strongly encouraged to redirect to a file other than
-/dev/null when running as a daemon 
+/dev/null when running as a daemon
 
 (See <a href="#hashdot.daemonize">hashdot.daemonize</a>).
 
@@ -245,9 +245,9 @@ script.</p>
 <h4><a name="hashdot.io_redirect.file">hashdot.io_redirect.file</a></h4>
 
 <p>Will redirect STDOUT/STDERR to the named file. When set in
-conjunction with 
+conjunction with
 
-<a href="#hashdot.daemonize">hashdot.daemonize</a>, 
+<a href="#hashdot.daemonize">hashdot.daemonize</a>,
 
 a HUP signal handler will also be
 registered (after the JVM is loaded) to reopen the named file. This
@@ -281,6 +281,26 @@ interpreted as a script file name.</p>
 <p>A list of flags that will cause hashdot to terminate looking for a
 script file.</p>
 
+<h3><a name="hashdot.pid_file">hashdot.pid_file</a></h3>
+
+<p>Attempt to create, lock, and write the final process ID to the
+specified file name. It is permissible to specify a path relative to
+the current working directory of the hashdot process (after any
+<a href="#hashdot.chdir">hashdot.chdir</a>).</p>
+
+<p>Only one process will succeed in acquiring the exclusive advisory
+lock, which is guaranteed to be cleared when the process
+exits. Attempts to start a second process will result in a warning
+being written to stderr or the redirected file.  Normal process exit
+(including SIGTERM, etc.) will also allow the process to unlink the
+PID file.  Abnormal exit originating outside the JDK (for example, an
+external "kill -9") will result in the lock being cleared but the PID
+file remaining. Since the file is unlocked however, this does not
+prevent a new process from starting.</p>
+
+<p>This option is typically used in conjunction with the daemon
+profile or <a href="#hashdot.daemonize">hashdot.daemonize</a>.</p>
+
 <h3><a name="hashdot.profile">hashdot.profile</a></h3>
 
 <p>Load the specified values as properties. Each profile is read from
@@ -295,16 +315,18 @@ Example:</p>
 
 <h3><a name="hashdot.script">hashdot.script</a></h3>
 
-<p>Set by hashdot to the absolute path of the script file, if identified. Note that the script file argument as passed to the script interpreter will still be relative, unless
+<p>Set by hashdot to the absolute path of the script file, if
+identified. Note that the script file argument as passed to the script
+interpreter will still be relative, unless
 
 <a href="#hashdot.chdir">hashdot.chdir</a>
 
 is also used.</p>
 
-
 <h3><a name="hashdot.script.dir">hashdot.script.dir</a></h3>
 
-<p>Set by hashdot to the absolute path of the directory containing the script file, if identified. See
+<p>Set by hashdot to the absolute path of the directory containing the
+script file, if identified. See
 
 <a href="#java.class.path">java.class.path</a>
 
@@ -331,16 +353,15 @@ profiles/default.hdp for platform specific examples.</p>
 <p>All path values are prepended to LD_LIBRARY_PATH (Linux) or
 DYLD_LIBRARY_PATH (Mac OS X) before loading the JVM.  Use of this
 property to resolve JVM libraries is deprecated in favor of using an
-absolute 
+absolute
 
 <a href="#hashdot.vm.lib">hashdot.vm.lib</a> value.</p>
-
 
 <h3><a name="hashdot.vm.options">hashdot.vm.options</a></h3>
 
 <p>Java VM options in flag format as per the java command line. See
 java tool docs for details. The "-server" option is actually achieved
-via 
+via
 
 <a href="#hashdot.vm.lib">hashdot.vm.lib</a>
 
@@ -372,11 +393,11 @@ format. Examples:</p>
 variables for normal operation of scripts is discouraged.)</li>
 
 <li>Any relative paths are relative to the current working directory
-of the hashdot process (after any 
+of the hashdot process (after any
 <a href="#hashdot.chdir">hashdot.chdir</a>).</li>
 
-<li>Use 
-${<a href="#hashdot.script.dir">hashdot.script.dir</a>} 
+<li>Use
+${<a href="#hashdot.script.dir">hashdot.script.dir</a>}
 to set paths relative to the directory containing the script.</li>
 
 <li>An error is returned by hashdot if any referenced files,
@@ -384,7 +405,6 @@ directories, or patterns do not actually exist. (A debugging
 improvement over java '-cp' behavior.)</li>
 
 </ul>
-
 
 <h2><a name="environment">Environment Variables</a></h2>
 
@@ -394,8 +414,7 @@ improvement over java '-cp' behavior.)</li>
 standard error.</p>
 
 <div class="copyright">
-  Copyright 2008-2009, David Kellum.  All rights reserved.
+  Copyright 2008-2010, David Kellum.  All rights reserved.
 </div>
 </body>
 </html>
-
