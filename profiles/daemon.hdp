@@ -17,3 +17,7 @@ hashdot.io_redirect.file = ./hashdot.log
 # Open for append to redirect.file (default)
 # Set to "false" to overwrite the file.
 # hashdot.io_redirect.append = true
+
+# Write PID file and allow only a single instance of the daemon to run
+# at one time.
+# hashdot.pid_file = ./hashdot.pid
