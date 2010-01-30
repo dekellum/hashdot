@@ -47,9 +47,9 @@
 #include <jni.h>
 
 #ifdef __MacOS_X__
-#define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM_Impl"
+#  define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM_Impl"
 #else
-#define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM"
+#  define CREATE_JVM_FUNCTION_NAME "JNI_CreateJavaVM"
 #endif
 
 typedef jint (*create_java_vm_f)(JavaVM **, JNIEnv **, JavaVMInitArgs *);

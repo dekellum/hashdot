@@ -43,16 +43,16 @@
 #include <apr_lib.h>
 #include <apr_file_io.h>
 
-#ifndef __MacOS_X__
-#  include <sys/prctl.h>
-#endif
-
 #include "runtime.h"
 #include "property.h"
 #include "daemon.h"
 #include "pidfile.h"
 #include "jvm.h"
 #include "libpath.h"
+
+#ifndef __MacOS_X__
+#  include <sys/prctl.h>
+#endif
 
 static apr_status_t
 skip_flags( int argc,
