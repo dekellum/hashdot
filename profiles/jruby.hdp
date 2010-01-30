@@ -1,7 +1,7 @@
 # HashDot launch profile for JRuby (http://jruby.codehaus.org/)
 #. hashdot.profile = jruby
 
-jruby.home    = /opt/dist/jruby-1.4.0
+jruby.home    = /opt/dist/jruby-1.1.5
 jruby.lib     = ${jruby.home}/lib
 jruby.script  = jruby
 jruby.shell   = /bin/sh

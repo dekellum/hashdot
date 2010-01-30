@@ -5,14 +5,12 @@
 ## Setup the default JVM
 
 # JVM install directory
-# Linux:
-hashdot.vm.home = /opt/dist/jdk_sun_1.6.0_18_x32
-# Mac (default JVM): hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework
-# Mac (version JVM): hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework/Versions/1.6.0
+# Linux: hashdot.vm.home = /opt/dist/jdk_sun_1.6.0_10_x32
+hashdot.vm.home = /System/Library/Frameworks/JavaVM.framework
 
 # For Linux: amd64, i386, etc.
 # Unused on Mac OS X
-hashdot.vm.arch = i386
+# hashdot.vm.arch = i386
 
 # Mode: client, server
 # client is unavailable on platforms like Linux amd64
@@ -21,6 +19,5 @@ hashdot.vm.mode = server
 
 # JVM library to Load
 # Delay expansion (:=) to allow variable overrides
-# Linux:
-hashdot.vm.lib := ${hashdot.vm.home}/jre/lib/${hashdot.vm.arch}/${hashdot.vm.mode}/libjvm.so
-# Mac: hashdot.vm.lib := ${hashdot.vm.home}/Libraries/lib${hashdot.vm.mode}.dylib
+# Linux: hashdot.vm.lib := ${hashdot.vm.home}/jre/lib/${hashdot.vm.arch}/${hashdot.vm.mode}/libjvm.so
+hashdot.vm.lib := ${hashdot.vm.home}/Libraries/lib${hashdot.vm.mode}.dylib
