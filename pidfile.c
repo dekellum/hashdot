@@ -73,8 +73,17 @@ apr_status_t lock_pid_file()
         }
 
         if( rv == APR_SUCCESS ) {
+            rv = apr_file_trunc( _pid_file, 0 );
+            if( rv != APR_SUCCESS ) {
+                ERROR( "Could not truncate pid file [%s].", pfile_name );
+                apr_file_close( _pid_file );
+            }
+        }
+
+        if( rv == APR_SUCCESS ) {
             apr_file_printf( _pid_file, "%d\n", getpid() );
         }
+
     }
 
     return rv;
