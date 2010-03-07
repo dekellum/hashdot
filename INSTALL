@@ -6,9 +6,9 @@ Note: This needs some work, in particular use of autoconf, etc.
 
    * GNU make (3.81+)
    * gcc (4.1.2+)
-   * Apache Portable Runtime: apr, apr-devel (1.2.7+) 
-   * Java JDK 
-   
+   * Apache Portable Runtime: apr, apr-devel (1.2.7+)
+   * Java JDK
+
 2. Edit Makefile
 
    a. Change JAVA_HOME to installed JDK to use for compiling.
@@ -22,14 +22,14 @@ Note: This needs some work, in particular use of autoconf, etc.
       For example, Mac OS X gcc defaults to -m32, so change it to -m64
       to use a 64-bit JVM.
 
-   c. Change PROFILE_DIR to desired location of hashdot profiles. 
+   c. Change PROFILE_DIR to desired location of hashdot profiles.
 
       Default: /opt/hashdot/profiles or environment variable.
 
       For testing, set PROFILE_DIR environment variable to
       "./profiles" (source directory). Set the PROFILE_DIR to its
       final location and rebuild before installing (see below.)
-      
+
    d. Change INSTALL_BIN to desired install location of hashdot
       binaries.
 
@@ -42,7 +42,7 @@ Note: This needs some work, in particular use of autoconf, etc.
    Edit profiles before installation and to get "make test" working
    with PROFILE_DIR=./profiles (see above.)
 
-   a. Edit JVM settings in ./profiles/default.hdp 
+   a. Edit JVM settings in ./profiles/default.hdp
 
       Note hashdot.vm.arch and hashdot.vm.lib settings for specific
       platforms.  On Mac OS X, you can use either a "default" system
@@ -52,11 +52,11 @@ Note: This needs some work, in particular use of autoconf, etc.
    b. Edit jruby.hdp to point to your jruby installation.
 
       JRuby is required for running the tests via "make test"
- 
+
 4. Build and test
-   
+
    Build with local profiles directory for testing prior to install:
-   
+
    % PROFILE_DIR=./profiles make test
 
    Note: On Mac OS X, the final test/test_cmdline.rb currently fails
@@ -68,5 +68,5 @@ Note: This needs some work, in particular use of autoconf, etc.
 
    Rebuild with final PROFILE_DIR and install:
 
-   % unset PROFILE_DIR 
+   % unset PROFILE_DIR
    % make clean install
