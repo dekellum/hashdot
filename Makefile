@@ -42,8 +42,6 @@ hashdot: $(OBJS)
 Makefile.deps : $(OBJS:%.o=%.c) *.h
 	$(CC) -MM $(CFLAGS) $(OBJS:%.o=%.c) > $@
 
-include Makefile.deps
-
 # Install to INSTALL_BIN and PROFILE_DIR
 install: hashdot
 	install -d $(PROFILE_DIR)
@@ -93,6 +91,8 @@ clean:
 	rm -rf hashdot-$(VERSION)-src.tar.gz hashdot hashdot.dSYM
 	rm -rf $(ALL_SYMLINKS)
 	rm -rf *.o
-	rm -rf Makefile.deps
+	rm -rf test/foobar.jar
+
+include Makefile.deps
 
 .PHONY : test test-examples all install dist publish
