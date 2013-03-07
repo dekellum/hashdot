@@ -27,7 +27,7 @@ binary:
 	$(MAKE) INSTALL_BIN=/opt/hashdot/bin INSTALL_ROOT=$(PWD)/debian/tmp install
 	# hack to construct a working default.hdp
 	-@sed -i "s:^hashdot.vm.home.*:hashdot.vm.home = $(JVMHOME):g" $(DEFAULT_CFG)
-	-@[ "`uname -m`" = "x86_64" ] && sed -i "s:^hashdot.vm.arch.*:hashdot.vm.arch = amd64:g" $(DEFAULT_CFG)
+	-@sed -i "s:^hashdot.vm.arch.*:hashdot.vm.arch = $(DEB_HOST_ARCH):g" $(DEFAULT_CFG)
 	# hack ends
 	dh_install --sourcedir=debian/tmp
 	dh_link
