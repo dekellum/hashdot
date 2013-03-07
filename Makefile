@@ -1,6 +1,6 @@
 # JDK used for compiling, a different one can be set at runtime,
 # see profiles/default.hdp
-JAVA_HOME?=$(realpath $(dir $(shell which java))/..)
+JAVA_HOME?=$(dirname $(dirname $(readlink -f /usr/bin/javac)))
 
 # Dependent on apache portable runtime (apr-devel-1.x apr-1.x)
 APR_CONFIG=$(shell which apr-1-config)
