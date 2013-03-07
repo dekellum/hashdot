@@ -1,0 +1,22 @@
+Source: hashdot
+Section: devel
+Priority: optional
+Maintainer: David Kedves <kedazo@gmail.com>
+Build-Depends: debhelper (>= 5), make, libapr1-dev (>= 1.2.7),
+               gcc, default-jdk
+Standards-Version: 3.9.1
+
+Package: hashdot
+Priority: optional
+Section: misc
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Hashdot: Java-platform Script Launcher
+
+Package: hashdot-dbg
+Priority: optional
+Section: misc
+Depends: hashdot (= ${source:Version})
+Architecture: any
+Description: Debug symbols for hashdot
+
