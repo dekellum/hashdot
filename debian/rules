@@ -1,0 +1,48 @@
+#!/usr/bin/make -f
+
+# get the path for the JRE
+JVMHOME=$(realpath $(dir $(shell readlink -f /usr/bin/java))/../..)
+# set the JAVA_HOME to the JDK (for the build)
+MAKEOPTS=JAVA_HOME=$(realpath $(dir $(shell readlink -f /usr/bin/javac))/..)
+
+DEFAULT_CFG=$(PWD)/debian/tmp/opt/hashdot/profiles/default.hdp
+
+clean:
+	dh_testroot
+	dh_testdir
+	-@$(MAKE) $(MAKEOPTS) clean
+	-@$(MAKE) $(MAKEOPTS) distclean
+	dh_clean 
+
+build:
+	dh_testdir
+	dh_prep
+	echo $(MAKEOPTS)
+	$(MAKE) $(MAKEOPTS)
+
+binary:
+	dh_testroot
+	dh_testdir
+	dh_installdirs
+	$(MAKE) INSTALL_BIN=/opt/hashdot/bin INSTALL_ROOT=$(PWD)/debian/tmp install
+	# hack to construct a working default.hdp
+	-@sed -i "s:^hashdot.vm.home.*:hashdot.vm.home = $(JVMHOME):g" $(DEFAULT_CFG)
+	-@sed -i "s:^hashdot.vm.arch.*:hashdot.vm.arch = $(DEB_HOST_ARCH):g" $(DEFAULT_CFG)
+	# hack ends
+	dh_install --sourcedir=debian/tmp
+	dh_link
+	dh_fixperms
+	dh_compress
+	dh_shlibdeps
+	dh_strip --dbg-package=hashdot-dbg
+	dh_installdeb
+	dh_installchangelogs
+	dh_md5sums
+	dh_gencontrol
+	dh_builddeb
+
+binary-arch: binary
+binary-indep: binary
+
+.PHONY: clean build binary binary-arch binary-indep
+

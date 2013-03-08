@@ -6,7 +6,7 @@ JAVA_HOME?=$(realpath $(dir $(shell which java))/..)
 APR_CONFIG=$(shell which apr-1-config)
 
 # Install hashdot binaries to specified directory
-INSTALL_BIN=/opt/bin
+INSTALL_BIN?=/opt/bin
 
 # The set of symlinks (from all below) to insall
 INSTALL_SYMLINKS = jruby
@@ -44,11 +44,11 @@ Makefile.deps : $(OBJS:%.o=%.c) *.h
 
 # Install to INSTALL_BIN and PROFILE_DIR
 install: hashdot
-	install -d $(PROFILE_DIR)
-	install -m 644 profiles/*.hdp $(PROFILE_DIR)
-	install -d $(INSTALL_BIN)
-	install -m 755 hashdot $(INSTALL_BIN)
-	cd $(INSTALL_BIN) && \
+	install -d $(INSTALL_ROOT)$(PROFILE_DIR)
+	install -m 644 profiles/*.hdp $(INSTALL_ROOT)$(PROFILE_DIR)
+	install -d $(INSTALL_ROOT)$(INSTALL_BIN)
+	install -m 755 hashdot $(INSTALL_ROOT)$(INSTALL_BIN)
+	cd $(INSTALL_ROOT)$(INSTALL_BIN) && \
 	for sl in $(INSTALL_SYMLINKS); do \
 		test -e $$sl || ln -s hashdot $$sl; \
 	done
@@ -92,6 +92,7 @@ clean:
 	rm -rf $(ALL_SYMLINKS)
 	rm -rf *.o
 	rm -rf test/foobar.jar
+	-rm -rf Makefile.deps
 
 include Makefile.deps
 
