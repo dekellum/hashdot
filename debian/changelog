@@ -1,0 +1,5 @@
+hashdot (1.4.0-4ubuntu1) precise; urgency=low
+
+  * Debian packaging.
+
+ -- David Kedves <kedazo@gmail.com>  Thu, 07 Mar 2013 14:30:22 +0100
