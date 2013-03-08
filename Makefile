@@ -92,6 +92,7 @@ clean:
 	rm -rf $(ALL_SYMLINKS)
 	rm -rf *.o
 	rm -rf test/foobar.jar
+	-rm -rf Makefile.deps
 
 include Makefile.deps
 
