@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 # get the path for the JRE
-JVMHOME=$(realpath $(dir $(shell readlink -f /usr/bin/java))/..)
+JVMHOME=$(realpath $(dir $(shell readlink -f /usr/bin/java))/../..)
 # set the JAVA_HOME to the JDK (for the build)
 MAKEOPTS=JAVA_HOME=$(realpath $(dir $(shell readlink -f /usr/bin/javac))/..)
 
