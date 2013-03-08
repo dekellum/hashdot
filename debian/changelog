@@ -1,4 +1,10 @@
-hashdot (1.4.0-5ubuntu1) precise; urgency=low
+hashdot (1.4.0-6ubuntu1) lucid; urgency=low
+
+  * Makefile fix (clean must remove the Makefile.deps)
+
+ -- David Kedves <kedazo@gmail.com>  Fri, 08 Mar 2013 09:56:49 +0100
+
+hashdot (1.4.0-5ubuntu2) precise; urgency=low
 
   * Debian packaging.
   * Version bump
